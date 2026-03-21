@@ -1,0 +1,24 @@
+# ── Only track: TFM_Ona_Code/*.py and TFM_DS_Ona_Mas_i_Serra/ ──
+# Everything else is excluded.
+
+# Exclude everything by default
+*
+
+# Allow these folders
+!TFM_Ona_Code/
+!TFM_Ona_Code/*.py
+!TFM_DS_Ona_Mas_i_Serra/
+!TFM_DS_Ona_Mas_i_Serra/**
+!TFM_DS_Ona_Mas_i_Serra/licenc/
+!TFM_DS_Ona_Mas_i_Serra/licenc/**
+
+# Allow repo essentials
+!.gitignore
+!README.md
+
+# Still exclude generated outputs inside code folder
+TFM_Ona_Code/output/
+TFM_Ona_Code/__pycache__/
+
+# macOS
+.DS_Store
