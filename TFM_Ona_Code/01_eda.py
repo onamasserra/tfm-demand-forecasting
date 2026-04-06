@@ -18,7 +18,7 @@ from style_config import (apply_style, PRIMARY, SECONDARY, ACCENT, NEUTRAL,
                           AIR_BLUE, DARK_BLUE, CORAL, AMBER, SLATE)
 
 # ── Configuration ──────────────────────────────────────────────────
-DATA_PATH = Path(__file__).resolve().parent.parent / "Datos.xlsx"
+DATA_PATH = Path(__file__).resolve().parent.parent / "Datos" / "Datos.xlsx"
 OUTPUT_DIR = Path(__file__).resolve().parent / "output" / "eda"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -256,8 +256,8 @@ for ax, prod_id in zip(axes.flat, sample_products):
     acf_vals = [series.autocorr(lag=i) for i in range(1, 61)]
     ax.bar(range(1, 61), acf_vals, color=PRIMARY, alpha=0.7)
     ax.axhline(y=0, color="black", linewidth=0.5)
-    ax.axhline(y=1.96/np.sqrt(len(series)), color=CORAL, linestyle="--", linewidth=0.8, label="95% CI")
-    ax.axhline(y=-1.96/np.sqrt(len(series)), color=CORAL, linestyle="--", linewidth=0.8)
+    ax.axhline(y=1.96/np.sqrt(len(series)), color=SLATE, linestyle="--", linewidth=0.8, label="95% CI")
+    ax.axhline(y=-1.96/np.sqrt(len(series)), color=SLATE, linestyle="--", linewidth=0.8)
     ax.set_title(f"Product {prod_id} (mean={series.mean():.1f})")
     ax.set_xlabel("Lag (days)")
     ax.set_ylabel("ACF")

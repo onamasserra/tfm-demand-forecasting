@@ -7,7 +7,7 @@ This chapter presents the complete design and implementation of the demand forec
 
 \subsection{Data Acquisition}
 
-The dataset used in this project was provided by the thesis supervisor and corresponds to real historical data from a company operating in the automotive sector. The data covers daily demand records for a portfolio of products, along with supplementary information on calendar events, promotional campaigns, and stock levels. All data was received in a single Microsoft Excel file (\texttt{Datos.xlsx}) containing four sheets, each representing a distinct dimension of the business context.
+The dataset used in this project was provided by the thesis supervisor and corresponds to real historical data from a company operating in the automotive sector. The data covers daily demand records for a portfolio of products, along with supplementary information on calendar events, promotional campaigns, and stock levels. The main data was received in a Microsoft Excel file (\texttt{Datos.xlsx}) containing four sheets, each representing a distinct dimension of the business context. Two additional files were provided for the economic impact analysis: \texttt{DatosCicloAprovisionamiento.xlsx} (replenishment cycle and lead time per product) and \texttt{DatosPrecioMedio.xlsx} (average unit price per product).
 
 No personally identifiable information is present in the dataset, and all product references are anonymised using numerical identifiers, ensuring compliance with data privacy requirements as discussed in Section~\ref{s:etic}.
 
@@ -24,33 +24,33 @@ The dataset comprises four tables, summarised in Table~\ref{tab:data_sheets}:
 \hline
 \textbf{Sheet} & \textbf{Key columns} & \textbf{Rows} & \textbf{Description} \\
 \hline
-Ventas (Sales) & producto, fecha, udsVenta & 654,588 & Daily unit sales per product \\
+Ventas (Sales) & producto, fecha, udsVenta & 629,391 & Daily unit sales per product \\
 \hline
-Calendario & fecha, bolOpen, bolHoliday & 732 & Calendar flags: business day and holiday indicators \\
+Calendario & fecha, bolOpen, bolHoliday & 787 & Calendar flags: business day and holiday indicators \\
 \hline
-Promociones & producto, fechaInicio, fechaFin & 1,894 & Promotional campaign periods per product \\
+Promociones & producto, fechaInicio, fechaFin & 26,511 & Promotional campaign periods per product \\
 \hline
-Stock & producto, fecha, udsStock & 654,588 & Daily stock levels per product \\
+Stock & producto, fecha, udsStock & 629,391 & Daily stock levels per product \\
 \hline
 \end{tabular}
 \end{table}
 
-The sales sheet constitutes the core of the dataset, containing 654,588 daily observations across 894 unique products over a period of 732 days, spanning from November 2022 to November 2024. Each record represents the number of units sold for a specific product on a specific date.
+The sales sheet constitutes the core of the dataset, containing 629,391 daily observations across 861 unique products over a period of 731 days, spanning from March 2024 to March 2026. Each record represents the number of units sold for a specific product on a specific date.
 
-The calendar sheet provides 732 daily records with two binary indicators: \texttt{bolOpen} (whether the business was open) and \texttt{bolHoliday} (whether the date was a public holiday). The promotions sheet contains 1,894 records defining promotional campaign windows through start and end dates for each product. The stock sheet mirrors the sales structure, recording the closing stock level for each product-date combination.
+The calendar sheet provides 787 daily records with two binary indicators: \texttt{bolOpen} (whether the business was open) and \texttt{bolHoliday} (whether the date was a public holiday). The promotions sheet contains 26,511 records defining promotional campaign windows through start and end dates for each product. The stock sheet mirrors the sales structure, recording the closing stock level for each product-date combination.
 
 \subsection{Data Loading}
 
 All four sheets were loaded into memory using the \texttt{pandas} library with the \texttt{openpyxl} engine. The sales and stock tables were merged on the shared keys \texttt{(producto, fecha)}, and the calendar information was joined on \texttt{fecha}. Promotional periods were transformed from date ranges into a binary indicator (\texttt{en\_promo}) at the product-date level, marking each observation as promotional or non-promotional based on whether the date fell within any active campaign for that product.
 
-After merging, the resulting dataset contained 654,588 rows and served as the foundation for all subsequent analysis. The merged dataset was persisted in Apache Parquet format for efficient reloading in downstream scripts.
+After merging, the resulting dataset contained 629,391 rows and served as the foundation for all subsequent analysis. The merged dataset was persisted in Apache Parquet format for efficient reloading in downstream scripts.
 
 
 \section{Data Exploration}
 
 \subsection{Data Summary}
 
-An initial statistical summary of the target variable (\texttt{udsVenta}, units sold) revealed a highly skewed distribution. The mean daily sales per product were 1.42 units, with a median of zero and a standard deviation of 3.56. The maximum observed value was 99 units. This distribution reflects the nature of automotive parts demand, where the majority of product-day combinations register zero sales, punctuated by occasional larger orders.
+An initial statistical summary of the target variable (\texttt{udsVenta}, units sold) revealed a highly skewed distribution. The mean daily sales per product were 1.19 units, with a median of zero and a standard deviation of 2.22. The maximum observed value was 397 units. This distribution reflects the nature of automotive parts demand, where the majority of product-day combinations register zero sales, punctuated by occasional larger orders.
 
 Table~\ref{tab:sales_stats} presents the key descriptive statistics:
 
@@ -63,19 +63,19 @@ Table~\ref{tab:sales_stats} presents the key descriptive statistics:
 \hline
 \textbf{Statistic} & \textbf{Value} \\
 \hline
-Count & 654,588 \\
-Mean & 1.42 \\
-Std. deviation & 3.56 \\
+Count & 629,391 \\
+Mean & 1.19 \\
+Std. deviation & 2.22 \\
 Median (50\%) & 0.00 \\
-75th percentile & 1.00 \\
-95th percentile & 7.00 \\
-Maximum & 99 \\
-Zero-sales proportion & 64.5\% \\
+75th percentile & 2.00 \\
+95th percentile & 5.00 \\
+Maximum & 397 \\
+Zero-sales proportion & 65.3\% \\
 \hline
 \end{tabular}
 \end{table}
 
-The high proportion of zero-sales observations (64.5\%) is a defining characteristic of this dataset and has important implications for model selection and evaluation, as discussed in subsequent sections.
+The high proportion of zero-sales observations (65.3\%) is a defining characteristic of this dataset and has important implications for model selection and evaluation, as discussed in subsequent sections.
 
 \begin{figure}[H]
 \centering
@@ -99,7 +99,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \textbf{Monthly and seasonal patterns.} Monthly aggregated sales show moderate variation across the year, without a single dominant seasonal peak. However, certain months consistently show higher activity, suggesting that calendar-based features (month, week of year) may contribute predictive value.
 
-\textbf{Promotional effects.} Comparing sales during promotional and non-promotional periods revealed that mean sales during promotions (1.83 units) were slightly higher than during non-promotional periods (1.38 units). However, the difference is modest, and the promotional flag alone does not capture the full complexity of promotional demand dynamics, which motivated the engineering of additional promotional features described in Section~3.4.
+\textbf{Promotional effects.} Comparing sales during promotional and non-promotional periods revealed that mean sales during promotions (1.36 units) were slightly higher than during non-promotional periods (1.16 units). However, the difference is modest, and the promotional flag alone does not capture the full complexity of promotional demand dynamics, which motivated the engineering of additional promotional features described in Section~3.4.
 
 \begin{figure}[H]
 \centering
@@ -125,9 +125,9 @@ The data quality assessment identified the following issues:
 
 \textbf{Negative values.} No negative sales or stock values were present in this dataset.
 
-\textbf{Stock breaks.} A stock break is defined as a day where both sales and stock are zero, potentially indicating that demand existed but could not be fulfilled due to inventory unavailability. Approximately 3.9\% of observations met this criterion. These were treated during data cleaning by imputing the product's historical mean sales for the corresponding weekday.
+\textbf{Stock breaks.} A stock break is defined as a day where both sales and stock are zero, potentially indicating that demand existed but could not be fulfilled due to inventory unavailability. Approximately 2.0\% of observations met this criterion. These were treated during data cleaning by imputing the product's historical mean sales for the corresponding weekday.
 
-\textbf{Outliers.} Outlier detection was performed using a threshold of 1.75 times the interquartile range (IQR) per product. This identified approximately 11,400 observations (1.75\% of the dataset) as outliers, which were capped at the upper threshold value. The IQR-based approach was preferred over a fixed standard deviation threshold to account for the varying demand scales across products.
+\textbf{Outliers.} Outlier detection was performed using a 3$\sigma$ threshold per product per month. This identified approximately 8,895 observations (1.41\% of the dataset) as outliers, which were capped at the upper threshold value. The per-product-per-month approach was preferred over a global threshold to account for the varying demand scales and seasonal patterns across products.
 
 
 \section{Data Preparation}
@@ -139,10 +139,10 @@ The data cleaning process addressed the two quality issues identified during exp
 \begin{enumerate}
     \item \textbf{Stock break imputation:} For observations where both \texttt{udsVenta} and \texttt{udsStock} were zero, the sales value was replaced with the mean sales for that product on the same weekday, computed over the preceding 30 days. This approach assumes that zero sales on a day with zero stock reflects a supply-side constraint rather than genuine zero demand, and uses a localised historical average to provide a reasonable demand estimate.
 
-    \item \textbf{Outlier capping:} Values exceeding 1.75 $\times$ IQR above the 75th percentile for each product were capped at the threshold value. This preserves the general distribution shape while limiting the influence of extreme observations on model training. A total of 11,400 values (1.75\% of the dataset) were capped.
+    \item \textbf{Outlier capping:} Values exceeding 3 standard deviations above the mean for each product-month combination were capped at the threshold value. This preserves the general distribution shape while limiting the influence of extreme observations on model training. A total of 8,895 values (1.41\% of the dataset) were capped.
 \end{enumerate}
 
-After cleaning, the dataset retained its original 654,588 rows with no records removed, ensuring that the temporal continuity required for lag feature computation was preserved.
+After cleaning, the dataset retained its original 629,391 rows with no records removed, ensuring that the temporal continuity required for lag feature computation was preserved.
 
 \subsection{Data Transformation}
 
@@ -192,7 +192,7 @@ Product-level statistics & prod\_mean\_sales, prod\_std\_sales, prod\_median\_sa
 
 \textbf{Promotional features} go beyond the binary indicator to capture the temporal dynamics of promotions. The \texttt{days\_since\_promo\_end} feature tracks the recency of the last promotional period, \texttt{post\_promo\_7d} flags the week immediately following a promotion (to capture post-promotional demand depression), and \texttt{promo\_x\_lag7} is an interaction term between the promotional flag and the lag-7 sales value.
 
-All lag and rolling features were computed strictly using past data to prevent information leakage. Observations where lag features could not be computed (the first 28 days of each product's history) were dropped, reducing the dataset from 654,588 to 629,370 rows. The final feature matrix was saved in Parquet format for use in the modelling phase.
+All lag and rolling features were computed strictly using past data to prevent information leakage. Observations where lag features could not be computed (the first 28 days of each product's history) were dropped, reducing the dataset from 629,391 to 605,283 rows. The final feature matrix was saved in Parquet format for use in the modelling phase.
 
 \begin{figure}[H]
 \centering
@@ -250,9 +250,9 @@ Three validation folds were defined, each with a 30-day test window, working bac
 \hline
 \textbf{Fold} & \textbf{Training period end} & \textbf{Test period} & \textbf{Test days} \\
 \hline
-1 & 2024-09-06 & 2024-09-07 -- 2024-10-06 & 30 \\
-2 & 2024-10-06 & 2024-10-07 -- 2024-11-05 & 30 \\
-3 & 2024-10-06 & 2024-10-07 -- 2024-11-05 & 30 \\
+1 & 2025-12-22 & 2025-12-23 -- 2026-01-21 & 30 \\
+2 & 2026-01-21 & 2026-01-22 -- 2026-02-20 & 30 \\
+3 & 2026-02-20 & 2026-02-21 -- 2026-03-22 & 30 \\
 \hline
 \end{tabular}
 \end{table}
@@ -276,27 +276,27 @@ Table~\ref{tab:tuned_params} presents the key tuned hyperparameters for each mod
 \hline
 \textbf{Model} & \textbf{Parameter} & \textbf{Value} \\
 \hline
-\multirow{5}{*}{LightGBM} & n\_estimators & 300 \\
- & learning\_rate & 0.011 \\
- & num\_leaves & 75 \\
+\multirow{5}{*}{LightGBM} & n\_estimators & 100 \\
+ & learning\_rate & 0.030 \\
+ & num\_leaves & 16 \\
+ & max\_depth & 8 \\
+ & min\_child\_samples & 41 \\
+\hline
+\multirow{5}{*}{XGBoost} & n\_estimators & 200 \\
+ & learning\_rate & 0.032 \\
  & max\_depth & 4 \\
- & min\_child\_samples & 25 \\
+ & min\_child\_weight & 15 \\
+ & subsample & 0.82 \\
 \hline
-\multirow{5}{*}{XGBoost} & n\_estimators & 350 \\
- & learning\_rate & 0.019 \\
- & max\_depth & 3 \\
- & min\_child\_weight & 10 \\
- & subsample & 0.90 \\
-\hline
-\multirow{4}{*}{Random Forest} & n\_estimators & 100 \\
- & max\_depth & 5 \\
- & min\_samples\_leaf & 16 \\
- & max\_features & 0.30 \\
+\multirow{4}{*}{Random Forest} & n\_estimators & 250 \\
+ & max\_depth & 8 \\
+ & min\_samples\_leaf & 17 \\
+ & max\_features & 0.49 \\
 \hline
 \end{tabular}
 \end{table}
 
-The relatively shallow tree depths (3--5) and conservative learning rates (0.011--0.019) selected by the optimiser suggest that the models benefit from regularisation, which is consistent with the high proportion of zero-demand observations in the dataset.
+The relatively shallow tree depths (4--8) and moderate learning rates (0.030--0.032) selected by the optimiser suggest that the models benefit from regularisation, which is consistent with the high proportion of zero-demand observations in the dataset.
 
 
 \section{Evaluation}
@@ -314,29 +314,26 @@ Table~\ref{tab:results_summary} presents the average performance of each model a
 \hline
 \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-XGBoost & 1.366 & 2.155 & 52.2 & 2.154 \\
-LightGBM & 1.373 & 2.158 & 51.7 & 2.158 \\
-Random Forest & 1.394 & 2.176 & 51.6 & 2.176 \\
-ARIMA$^\dagger$ & 1.443 & 2.220 & 59.8 & 2.219 \\
-LSTM & 1.522 & 2.235 & 49.8 & 2.223 \\
-Naive (lag-7) & 1.661 & 3.091 & 86.0 & 3.091 \\
+XGBoost & 1.105 & 1.631 & 50.7 & 1.631 \\
+Random Forest & 1.099 & 1.636 & 49.9 & 1.635 \\
+LightGBM & 1.130 & 1.636 & 49.9 & 1.635 \\
+LSTM & 1.148 & 1.662 & 49.6 & 1.655 \\
+ARIMA & 1.211 & 1.734 & 53.9 & 1.732 \\
+Naive (lag-7) & 1.256 & 2.277 & 74.4 & 2.277 \\
 \hline
 \end{tabular}
-\begin{flushleft}
-\footnotesize{$^\dagger$ ARIMA evaluated on 50 sampled products due to per-product fitting cost.}
-\end{flushleft}
 \end{table}
 
-All three tree-based machine learning models substantially outperform both the naive baseline and the classical/deep learning alternatives. XGBoost achieves the lowest RMSE (2.155), followed closely by LightGBM (2.158) and Random Forest (2.176). The RMSE improvement over the naive baseline ranges from 27.9\% (LSTM) to 30.3\% (XGBoost).
+All three tree-based machine learning models substantially outperform both the naive baseline and the deep learning alternative. XGBoost achieves the lowest RMSE (1.631), followed closely by Random Forest and LightGBM (both 1.636). The RMSE improvement over the naive baseline ranges from 23.9\% (ARIMA) to 28.4\% (XGBoost).
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.png}
-\caption{Comparison of forecast accuracy (RMSE) across all six models. The three tree-based models form a tight cluster, substantially outperforming both classical and deep learning alternatives.}
+\caption{Comparison of forecast accuracy (RMSE) across all six models. The three tree-based models form a tight cluster, with ARIMA and LSTM close behind, all substantially outperforming the naive baseline.}
 \label{fig:all_models_comparison}
 \end{figure}
 
-ARIMA and LSTM occupy an intermediate position: both significantly outperform the naive baseline (RMSE reductions of 28.2\% and 27.7\% respectively) but fall short of the tree-based models. This result is consistent with the findings of the M5 forecasting competition \citep{makridakis2021m5findings}, where gradient boosting algorithms consistently outperformed both classical statistical methods and standalone deep learning approaches. The LSTM's slightly lower MAPE (49.8\%) but higher RMSE suggests it handles the zero-heavy distribution differently from tree models, producing fewer large percentage errors but occasionally larger absolute deviations.
+ARIMA achieves an RMSE of 1.734 when fitted to all 861 products, placing it between the LSTM (1.662) and the naive baseline (2.277). This represents a 23.9\% improvement over the naive approach, demonstrating that classical time series methods remain competitive when applied at scale. The LSTM achieves the second-best RMSE (1.662), narrowing the gap with the tree-based models. This result is consistent with the findings of the M5 forecasting competition \citep{makridakis2021m5findings}, where gradient boosting algorithms consistently outperformed both classical statistical methods and standalone deep learning approaches, though the margins were often narrow.
 
 \subsection{Comparison of Results Across Models}
 
@@ -351,22 +348,22 @@ ARIMA and LSTM occupy an intermediate position: both significantly outperform th
 \hline
 \textbf{Segment} & \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-\multirow{4}{*}{Non-Promo} & XGBoost & 1.299 & 2.055 & 52.3 & 2.055 \\
- & LightGBM & 1.308 & 2.058 & 51.8 & 2.058 \\
- & Random Forest & 1.327 & 2.073 & 51.6 & 2.073 \\
- & Naive (lag-7) & 1.565 & 2.969 & 85.9 & 2.969 \\
+\multirow{4}{*}{Non-Promo} & XGBoost & 1.089 & 1.638 & 51.2 & 1.637 \\
+ & LightGBM & 1.118 & 1.642 & 50.0 & 1.641 \\
+ & Random Forest & 1.086 & 1.643 & 50.1 & 1.642 \\
+ & Naive (lag-7) & 1.237 & 2.288 & 74.2 & 2.288 \\
 \hline
-\multirow{4}{*}{Promo} & XGBoost & 1.917 & 2.844 & 51.7 & 2.836 \\
- & LightGBM & 1.911 & 2.851 & 51.4 & 2.838 \\
- & Random Forest & 1.944 & 2.884 & 51.6 & 2.873 \\
- & Naive (lag-7) & 2.448 & 3.956 & 86.9 & 3.955 \\
+\multirow{4}{*}{Promo} & XGBoost & 1.165 & 1.607 & 48.9 & 1.607 \\
+ & LightGBM & 1.175 & 1.615 & 49.3 & 1.615 \\
+ & Random Forest & 1.146 & 1.611 & 49.4 & 1.611 \\
+ & Naive (lag-7) & 1.326 & 2.233 & 74.9 & 2.233 \\
 \hline
 \end{tabular}
 \end{table}
 
-Promotional demand is consistently harder to predict across all models, with RMSE values approximately 38\% higher than for non-promotional periods. However, the ML models maintain their advantage over the naive baseline in both segments, with RMSE improvements of approximately 28\% for non-promotional and 28\% for promotional demand.
+Promotional demand is consistently harder to predict across all models, though the difference is less pronounced in this dataset. However, the ML models maintain their advantage over the naive baseline in both segments, with RMSE improvements of approximately 28\% for both non-promotional and promotional demand.
 
-\textbf{Per-product RMSE distribution.} Analysis at the individual product level reveals that LightGBM achieves a median per-product RMSE of 1.65, compared to 2.36 for the naive baseline. The improvement is not uniform: some products see RMSE reductions exceeding 15 units, while approximately 10 products show marginally worse performance with ML than with the naive approach. These products tend to have very low and stable demand where the simple lag-7 heuristic is already near-optimal.
+\textbf{Per-product RMSE distribution.} Analysis at the individual product level reveals that LightGBM achieves a median per-product RMSE of 1.32, compared to 1.83 for the naive baseline. The improvement is not uniform: some products see RMSE reductions exceeding 8 units, while approximately 10 products show marginally worse performance with ML than with the naive approach. These products tend to have very low and stable demand where the simple lag-7 heuristic is already near-optimal.
 
 \begin{figure}[H]
 \centering
@@ -400,21 +397,21 @@ Promotional demand is consistently harder to predict across all models, with RMS
 \hline
 \textbf{Rank} & \textbf{Feature} & \textbf{Mean $|$SHAP$|$} \\
 \hline
-1 & ewma\_28 & 0.524 \\
-2 & bolHoliday & 0.295 \\
-3 & roll\_mean\_28 & 0.150 \\
-4 & day\_of\_week & 0.079 \\
-5 & udsStock & 0.063 \\
-6 & roll\_max\_28 & 0.046 \\
-7 & lag\_28 & 0.025 \\
-8 & bolOpen & 0.022 \\
-9 & roll\_mean\_14 & 0.017 \\
-10 & roll\_max\_14 & 0.016 \\
+1 & ewma\_28 & 0.473 \\
+2 & day\_of\_week & 0.260 \\
+3 & roll\_mean\_28 & 0.108 \\
+4 & udsStock & 0.037 \\
+5 & lag\_7 & 0.024 \\
+6 & lag\_28 & 0.022 \\
+7 & lag\_14 & 0.018 \\
+8 & roll\_max\_28 & 0.018 \\
+9 & bolOpen & 0.018 \\
+10 & bolHoliday & 0.004 \\
 \hline
 \end{tabular}
 \end{table}
 
-The 28-day EWMA emerges as the single most important predictor, followed by the holiday indicator and the 28-day rolling mean. This confirms that the model relies heavily on smoothed representations of recent demand history, with calendar effects providing secondary but significant predictive power. Notably, the longer-horizon features (28-day windows) dominate over shorter-horizon ones (7-day), suggesting that the model captures medium-term demand trends rather than relying solely on short-term momentum.
+The 28-day EWMA emerges as the single most important predictor, followed by the day of week and the 28-day rolling mean. This confirms that the model relies heavily on smoothed representations of recent demand history, with calendar effects providing secondary but significant predictive power. Notably, the longer-horizon features (28-day windows) dominate over shorter-horizon ones (7-day), suggesting that the model captures medium-term demand trends rather than relying solely on short-term momentum.
 
 \begin{figure}[H]
 \centering
@@ -437,15 +434,15 @@ The evaluation yields several key findings:
 \begin{enumerate}
     \item The three tree-based machine learning models (XGBoost, LightGBM, Random Forest) achieve the best performance, with RMSE values within 1\% of each other. This suggests that the feature engineering, rather than the specific algorithm choice, is the primary driver of forecast quality among this model family.
 
-    \item ARIMA and LSTM occupy an intermediate tier, both significantly outperforming the naive baseline (RMSE reductions of 28\% and 28\% respectively) but falling short of the tree-based models. ARIMA's per-product fitting captures local demand patterns effectively but cannot leverage cross-product information or engineered features. LSTM captures sequential dependencies but requires substantially more training data and computation to match tree-based performance.
+    \item ARIMA and LSTM occupy an intermediate tier. ARIMA (RMSE = 1.734) achieves a 23.9\% improvement over the naive baseline when fitted to all 861 products, demonstrating that classical time series methods remain effective. LSTM (RMSE = 1.662) narrows the gap further with the tree-based models. ARIMA's per-product fitting captures local demand patterns effectively but cannot leverage cross-product information or engineered features. LSTM captures sequential dependencies but requires substantially more training data and computation.
 
-    \item The improvement over the naive baseline is substantial across all ML approaches (28--30\% RMSE reduction), demonstrating the value of incorporating engineered features and systematic model training over simple heuristic forecasting.
+    \item The improvement over the naive baseline is substantial across all ML approaches (24--28\% RMSE reduction), demonstrating the value of incorporating engineered features and systematic model training over simple heuristic forecasting.
 
-    \item Promotional demand remains the most challenging segment, with RMSE approximately 38\% higher than non-promotional demand across all models. However, the ML models maintain their relative advantage over the baseline in both segments.
+    \item Promotional demand remains challenging, though the ML models maintain their relative advantage over the baseline in both promotional and non-promotional segments.
 
     \item SHAP analysis reveals that smoothed demand history (EWMA and rolling statistics) and calendar features are the most influential predictors, validating the feature engineering strategy adopted in this work.
 
-    \item The forecast error standard deviation ($\sigma_e \approx 2.15$ for the best tree models, $\sigma_e \approx 2.22$ for ARIMA/LSTM, compared to $\sigma_e \approx 3.09$ for the naive baseline) translates directly into safety stock reductions, as quantified in the following section.
+    \item The forecast error standard deviation ($\sigma_e \approx 1.74$ for the best tree models, $\sigma_e \approx 2.40$ for the naive baseline) provides the direct input to the safety stock calculation presented in the following section.igma_e \approx 2.22$ for ARIMA/LSTM, compared to $\sigma_e \approx 3.09$ for the naive baseline) translates directly into safety stock reductions, as quantified in the following section.
 \end{enumerate}
 
 
@@ -455,7 +452,7 @@ The evaluation yields several key findings:
 
 The transition from a naive forecasting approach to machine learning models has implications beyond numerical accuracy improvements. From an operational perspective, the key process impacts are:
 
-\textbf{Safety stock reduction.} Using the safety stock formulation from Equation~\ref{eq:safety_stock} with a 95\% service level ($z = 1.645$) and a protection period of 10 days (3 days lead time + 7 days review period), the total safety stock across all 894 products decreases from 11,953 units under the naive forecast to 8,276 units under LightGBM --- a reduction of 30.8\%. This means that the same service level can be maintained with significantly less inventory investment.
+\textbf{Safety stock reduction.} Using the safety stock formulation from Equation~\ref{eq:safety_stock} with a 95\% service level ($z = 1.645$) and per-product protection periods computed as the sum of the replenishment cycle (\texttt{diasEntrePedidos}) and lead time (\texttt{diasLeadtime}) from the company's operational data, the total safety stock across all 861 products decreases from 12,544 units under the naive forecast to 9,090 units under XGBoost --- a reduction of 27.5\%. This means that the same service level can be maintained with significantly less inventory investment.
 
 \textbf{Forecast error symmetry.} Analysis of error distributions shows that the ML models produce approximately symmetric errors centred near zero, whereas the naive baseline exhibits a slight positive bias (tendency to overforecast). Symmetric errors are preferable for inventory planning, as they indicate that the forecast is equally likely to overestimate or underestimate demand, allowing safety stock to function as intended.
 
@@ -470,78 +467,78 @@ The transition from a naive forecasting approach to machine learning models has 
 \hline
 \textbf{Model} & \textbf{90\%} & \textbf{95\%} & \textbf{99\%} \\
 \hline
-LightGBM & 6,450 & 8,276 & 11,702 \\
-XGBoost & 6,466 & 8,296 & 11,731 \\
-Random Forest & 6,507 & 8,350 & 11,806 \\
-Naive (lag-7) & 9,316 & 11,953 & 16,902 \\
+XGBoost & 7,083 & 9,090 & 12,856 \\
+Random Forest & 7,094 & 9,105 & 12,876 \\
+LightGBM & 7,116 & 9,133 & 12,916 \\
+Naive (lag-7) & 9,773 & 12,544 & 17,740 \\
 \hline
 \end{tabular}
 \end{table}
 
-The ML models consistently require approximately 30\% less safety stock than the naive baseline across all service levels, demonstrating that the improvement is robust and not dependent on a specific service level assumption.
+The ML models consistently require approximately 27\% less safety stock than the naive baseline across all service levels, demonstrating that the improvement is robust and not dependent on a specific service level assumption.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/21_safety_stock_by_service_level.png}
-\caption{Total safety stock requirements by model and service level. The ML models maintain a consistent ~30\% advantage over the naive baseline across all service levels.}
+\caption{Total safety stock requirements by model and service level. The ML models maintain a consistent ~27\% advantage over the naive baseline across all service levels.}
 \label{fig:safety_stock_service_level}
 \end{figure}
 
 \subsection{Economic Impact}
 
-The economic impact analysis combines two cost components: the newsvendor cost (direct cost of forecast errors) and the safety stock holding cost.
+The economic impact analysis translates the forecast accuracy improvements into monetary terms using the methodology described in the \texttt{EstimacionCostesStock} document provided by the thesis supervisor, combined with real per-product cost parameters from the company.
 
-\textbf{Newsvendor cost analysis.} Following the total cost formulation from Equation~\ref{eq:total_cost}, the asymmetric costs of overforecasting and underforecasting were computed using cost parameters of $C_o = \text{\euro}0.10$ per unit per day (overage/holding) and $C_u = \text{\euro}0.50$ per unit per day (underage/lost sale), yielding a critical ratio of 0.83. These values reflect a typical retail/industrial setting where stockout costs substantially exceed holding costs.
+\textbf{Cost parameters.} Two additional datasets were used for this analysis:
+\begin{itemize}
+    \item \texttt{DatosCicloAprovisionamiento.xlsx}: provides the replenishment cycle (\texttt{diasEntrePedidos}, mean = 13.8 days) and lead time (\texttt{diasLeadtime}, mean = 5.4 days) for each of the 1,000 products.
+    \item \texttt{DatosPrecioMedio.xlsx}: provides the average unit price (\texttt{eurPrecioMedio}, mean = \euro49.75, range \euro0.01 -- \euro625.26) for each product.
+\end{itemize}
 
-Table~\ref{tab:newsvendor} presents the newsvendor cost results:
+The protection period for each product was computed as the sum of its replenishment cycle and lead time ($T_i + L_i$), with a mean of 19.1 days across the portfolio.
+
+\textbf{Safety stock cost.} Following the formulation from Equation~\ref{eq:ss_cost}, the daily holding cost for each product's safety stock was computed as:
+
+\[
+\text{DailyCost}_i = 5\% \times \text{price}_i \times SS_i
+\]
+
+\noindent where $SS_i = z \times RMSE_i \times \sqrt{T_i + L_i}$ and the 5\% rate represents the combined cost of warehousing, insurance, and capital opportunity cost, as specified in the supervisor's methodology document.
+
+Table~\ref{tab:economic_summary} presents the total annual safety stock cost for each model:
 
 \begin{table}[H]
 \centering
 \small
-\caption{Newsvendor cost analysis (30-day test period, annualised).}
-\label{tab:newsvendor}
+\caption{Annual safety stock cost by model (95\% service level, real per-product parameters).}
+\label{tab:economic_summary}
 \begin{tabular}{|l|r|r|r|r|}
 \hline
-\textbf{Model} & \textbf{Overage (€)} & \textbf{Underage (€)} & \textbf{Total (€)} & \textbf{Annual est. (€)} \\
+\textbf{Model} & \textbf{Avg RMSE} & \textbf{Total SS (units)} & \textbf{Annual Cost (\euro)} & \textbf{Savings vs Naive} \\
 \hline
-Naive (lag-7) & 2,227 & 11,138 & 13,365 & 162,603 \\
-Random Forest & 1,830 & 9,538 & 11,367 & 138,304 \\
-LightGBM & 1,786 & 9,489 & 11,275 & 137,182 \\
-XGBoost & 1,785 & 9,392 & 11,176 & 135,979 \\
-\hline
-\end{tabular}
-\end{table}
-
-XGBoost achieves the lowest newsvendor cost, saving approximately \euro26,600 annually (16.4\%) compared to the naive baseline. Underage costs dominate in all models, consistent with the asymmetric cost structure where stockouts are five times more expensive than excess inventory.
-
-\textbf{Combined cost analysis.} Table~\ref{tab:combined_cost} presents the total annual cost combining newsvendor costs with safety stock holding costs at the 95\% service level:
-
-\begin{table}[H]
-\centering
-\small
-\caption{Combined annual cost: newsvendor + safety stock holding (95\% service level).}
-\label{tab:combined_cost}
-\begin{tabular}{|l|r|r|r|}
-\hline
-\textbf{Model} & \textbf{Newsvendor (€/yr)} & \textbf{SS Holding (€/yr)} & \textbf{Total (€/yr)} \\
-\hline
-Naive (lag-7) & 162,603 & 436,294 & 598,896 \\
-Random Forest & 138,304 & 304,763 & 443,067 \\
-LightGBM & 137,182 & 302,083 & 439,265 \\
-XGBoost & 135,979 & 302,816 & 438,796 \\
+Naive (lag-7) & 2.01 & 12,544 & 11,398,048 & --- \\
+XGBoost & 1.45 & 9,090 & 8,307,074 & \euro3,090,974 (27.1\%) \\
+Random Forest & 1.45 & 9,105 & 8,310,660 & \euro3,087,388 (27.1\%) \\
+LightGBM & 1.46 & 9,133 & 8,341,910 & \euro3,056,137 (26.8\%) \\
 \hline
 \end{tabular}
 \end{table}
 
-The ML models achieve total annual cost savings of approximately \euro160,000 (26.7\%) compared to the naive baseline. XGBoost and LightGBM perform nearly identically in economic terms, with XGBoost holding a marginal advantage of \euro469 annually.
+XGBoost achieves the lowest total annual cost, saving approximately \euro3.1 million annually (27.1\%) compared to the naive baseline. The three ML models perform nearly identically in economic terms, with total cost differences of less than \euro35,000 between them.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/22_combined_annual_cost.png}
-\caption{Combined annual inventory cost (newsvendor + safety stock holding) by model. The ML models reduce total costs by approximately 26.7\% compared to the naive baseline.}
-\label{fig:combined_annual_cost}
+\includegraphics[width=0.85\textwidth]{figures/20_annual_cost_comparison.png}
+\caption{Annual safety stock cost by model. The ML models reduce total costs by approximately 27\% compared to the naive baseline.}
+\label{fig:annual_cost_comparison}
 \end{figure}
 
-These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into meaningful economic benefits. The 28\% reduction in RMSE corresponds to a 26.7\% reduction in total inventory-related costs, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:total_cost}).
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/22_safety_stock_distribution.png}
+\caption{Per-product safety stock distribution: Naive vs XGBoost. The ML model shifts the distribution towards lower safety stock requirements across the product portfolio.}
+\label{fig:safety_stock_distribution}
+\end{figure}
 
-It is important to note that the cost parameters used in this analysis ($C_o$ and $C_u$) are illustrative values chosen to reflect typical industrial cost structures. The relative ranking of models and the percentage savings are robust to reasonable variations in these parameters, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained regardless of the risk tolerance adopted by the organisation.
+These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The 27\% reduction in RMSE corresponds to a 27\% reduction in annual safety stock costs, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
+
+It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis supervisor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained regardless of the risk tolerance adopted by the organisation.

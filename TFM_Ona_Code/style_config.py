@@ -31,20 +31,20 @@ PRIMARY     = DARK_BLUE    # main bars, single-series plots
 SECONDARY   = LIGHT_BLUE   # second series, paired with PRIMARY
 ACCENT      = TEAL         # highlights, best values (3rd colour)
 WARM        = AMBER        # warm contrast (4th colour)
-ALERT       = CORAL        # red accent for reference lines, warnings
+ALERT       = "#4A4A4A"   # dark grey for reference/diagnostic lines
 NEUTRAL     = SLATE        # baselines, less important
 PROMO_YES   = LIGHT_BLUE   # promotional  (UOC secondary)
 PROMO_NO    = DARK_BLUE    # non-promotional (UOC primary)
 
 # ── Consistent model color mapping ─────────────────────────────
 MODEL_COLORS = {
-    "XGBoost":        DARK_BLUE,   # primary brand colour
-    "LightGBM":       TEAL,        # complementary teal
+    "XGBoost":        DARK_BLUE,   # primary brand colour (best model)
+    "LightGBM":       LIGHT_BLUE,  # secondary brand colour
     "Random Forest":  AIR_BLUE,    # mid-tone blue
     "RandomForest":   AIR_BLUE,    # alias
-    "ARIMA":          AMBER,       # warm contrast
-    "ARIMA*":         AMBER,       # alias for annotated ARIMA
-    "LSTM":           CORAL,       # red accent
+    "ARIMA":          TEAL,        # complementary teal
+    "ARIMA*":         TEAL,        # alias for annotated ARIMA
+    "LSTM":           "#8E6CA8",   # soft purple
     "Naive (lag-7)":  SLATE,       # neutral baseline
     "Naive_lag7":     SLATE,       # alias
 }

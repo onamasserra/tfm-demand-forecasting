@@ -42,8 +42,8 @@ EXCLUDE = ["producto", "idSecuencia", "fecha", "day_name", TARGET,
            "prod_mean_sales", "prod_std_sales", "prod_median_sales"]
 
 # ARIMA config
-N_ARIMA_PRODUCTS = 50
-SKIP_ARIMA = True  # cached from previous run
+N_ARIMA_PRODUCTS = None  # None = all products
+SKIP_ARIMA = False
 
 # LSTM config
 LSTM_HIDDEN = 32
@@ -99,20 +99,71 @@ print("\n" + "=" * 60)
 print("2. ARIMA BASELINE")
 print("=" * 60)
 
-# ARIMA results from previous run (50 products, ~6 min)
-# Fair comparison on same 50 products:
-#   ARIMA:    MAE=1.443  RMSE=2.220  σ_e=2.219
-#   Naive:    MAE=1.600  RMSE=2.996  σ_e=2.996
-#   LightGBM: MAE=1.357  RMSE=2.099  σ_e=2.098
-arima_mean = {
-    "model": "ARIMA",
-    "MAE": 1.443, "RMSE": 2.220, "MAPE": 59.8, "sigma_e": 2.219,
-    "note": "sampled 50 products, fair comparison RMSE"
-}
-print(f"ARIMA (cached, {N_ARIMA_PRODUCTS} products):")
-print(f"  MAE={arima_mean['MAE']:.3f}  RMSE={arima_mean['RMSE']:.3f}  "
-      f"MAPE={arima_mean['MAPE']:.1f}%  σ_e={arima_mean['sigma_e']:.3f}")
-print("  (ARIMA beats Naive but loses to tree-based ML models)")
+if SKIP_ARIMA:
+    # Use cached results
+    arima_mean = {
+        "model": "ARIMA",
+        "MAE": 1.443, "RMSE": 2.220, "MAPE": 59.8, "sigma_e": 2.219,
+        "note": "cached from previous run"
+    }
+    print(f"ARIMA (cached): MAE={arima_mean['MAE']:.3f}  RMSE={arima_mean['RMSE']:.3f}")
+else:
+    import pmdarima as pm
+
+    arima_products = all_products if N_ARIMA_PRODUCTS is None else np.random.choice(
+        all_products, size=N_ARIMA_PRODUCTS, replace=False)
+    n_arima = len(arima_products)
+    print(f"Running ARIMA on {n_arima} products...")
+
+    arima_preds_list = []
+    arima_errors = 0
+    t0 = time.time()
+
+    for i, prod in enumerate(arima_products):
+        prod_df = df[df["producto"] == prod].sort_values("fecha")
+        train_series = prod_df[prod_df["fecha"] < cutoff_date][TARGET].values
+        test_series = prod_df[(prod_df["fecha"] >= test_start) & (prod_df["fecha"] <= test_end)]
+
+        if len(train_series) < 30 or len(test_series) == 0:
+            arima_errors += 1
+            continue
+
+        try:
+            model = pm.auto_arima(train_series, seasonal=True, m=7,
+                                   suppress_warnings=True, error_action="ignore",
+                                   max_p=3, max_q=3, max_P=2, max_Q=2, max_d=2, max_D=1,
+                                   stepwise=True, n_fits=20)
+            fc = model.predict(n_periods=len(test_series))
+            fc = np.clip(fc, 0, None)
+
+            for j, (_, row) in enumerate(test_series.iterrows()):
+                arima_preds_list.append({
+                    "producto": prod,
+                    "fecha": row["fecha"],
+                    TARGET: row[TARGET],
+                    "ARIMA": fc[j]
+                })
+        except Exception:
+            arima_errors += 1
+
+        if (i + 1) % 50 == 0 or i == 0:
+            elapsed = time.time() - t0
+            rate = (i + 1) / elapsed * 60
+            remaining = (n_arima - i - 1) / rate if rate > 0 else 0
+            print(f"  [{i+1}/{n_arima}] {elapsed:.0f}s elapsed, ~{remaining:.0f}min remaining, {arima_errors} errors")
+
+    elapsed = time.time() - t0
+    print(f"\nARIMA complete: {elapsed:.0f}s ({elapsed/60:.1f}min), {arima_errors} errors out of {n_arima}")
+
+    arima_pred_df = pd.DataFrame(arima_preds_list)
+    arima_m = calc_metrics(arima_pred_df[TARGET], arima_pred_df["ARIMA"])
+    arima_mean = {"model": "ARIMA", **arima_m, "note": f"all {n_arima} products"}
+    print(f"  ARIMA: MAE={arima_m['MAE']:.3f}  RMSE={arima_m['RMSE']:.3f}  "
+          f"MAPE={arima_m['MAPE']:.1f}%  σ_e={arima_m['sigma_e']:.3f}")
+
+    # Save ARIMA predictions
+    arima_pred_df.to_parquet(MODEL_DIR / "arima_predictions.parquet", index=False)
+    print(f"✓ Saved arima_predictions.parquet ({len(arima_pred_df):,} rows)")
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -286,12 +337,10 @@ print("✓ Saved arima_lstm_results.csv & predictions_all_models.parquet")
 fig, ax = plt.subplots(figsize=(10, 6))
 labels = all_models + ["ARIMA*"]
 rmses = [calc_metrics(merged[TARGET], merged[m])["RMSE"] for m in all_models] + [arima_mean["RMSE"]]
-colors = [ACCENT if r == min(rmses[:5]) else get_model_color(l) for l, r in zip(labels[:5], rmses[:5])]
-colors.append(get_model_color("ARIMA*"))
+colors = [get_model_color(l) for l in labels]
 ax.barh(labels, rmses, color=colors, edgecolor="white")
 ax.set_xlabel("RMSE")
 ax.set_title("All Models — RMSE Comparison")
-ax.annotate("* ARIMA on 50 sampled products", xy=(0.02, 0.02), xycoords="axes fraction", fontsize=8, style="italic")
 save_fig("24_all_models_comparison")
 
 # Plot: LSTM actual vs predicted
