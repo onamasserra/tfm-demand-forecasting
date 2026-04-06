@@ -7,6 +7,7 @@
 # Allow these folders
 !TFM_Ona_Code/
 !TFM_Ona_Code/*.py
+!TFM_Ona_Code/*.ipynb
 !TFM_DS_Ona_Mas_i_Serra/
 !TFM_DS_Ona_Mas_i_Serra/**
 !TFM_DS_Ona_Mas_i_Serra/licenc/
