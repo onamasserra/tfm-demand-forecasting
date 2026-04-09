@@ -1,23 +1,26 @@
-# ── Only track: TFM_Ona_Code/*.py and TFM_DS_Ona_Mas_i_Serra/ ──
-# Everything else is excluded.
-
 # Exclude everything by default
 *
-
-# Allow these folders
-!TFM_Ona_Code/
-!TFM_Ona_Code/*.py
-!TFM_Ona_Code/*.ipynb
-!TFM_DS_Ona_Mas_i_Serra/
-!TFM_DS_Ona_Mas_i_Serra/**
-!TFM_DS_Ona_Mas_i_Serra/licenc/
-!TFM_DS_Ona_Mas_i_Serra/licenc/**
 
 # Allow repo essentials
 !.gitignore
 !README.md
 
-# Still exclude generated outputs inside code folder
+# Allow code notebooks and shared config
+!TFM_Ona_Code/
+!TFM_Ona_Code/*.ipynb
+!TFM_Ona_Code/style_config.py
+
+# Allow LaTeX thesis source
+!TFM_DS_Ona_Mas_i_Serra/
+!TFM_DS_Ona_Mas_i_Serra/**
+!TFM_DS_Ona_Mas_i_Serra/licenc/
+!TFM_DS_Ona_Mas_i_Serra/licenc/**
+
+# Allow raw data (needed to run notebooks from scratch)
+!Datos/
+!Datos/*.xlsx
+
+# Exclude generated outputs
 TFM_Ona_Code/output/
 TFM_Ona_Code/__pycache__/
 
