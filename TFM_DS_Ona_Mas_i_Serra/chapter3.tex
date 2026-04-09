@@ -88,12 +88,12 @@ The high proportion of zero-sales observations (65.3\%) is a defining characteri
 
 The exploratory analysis examined demand patterns across several dimensions:
 
-\textbf{Day-of-week patterns.} Sales exhibit a clear weekly cycle, with the highest volumes on weekdays (Monday through Friday) and a sharp decline on Saturdays. Sunday sales are near zero, consistent with the business being closed on Sundays as indicated by the \texttt{bolOpen} calendar flag. This weekly seasonality motivates the inclusion of day-of-week features and the use of a lag-7 naive baseline (same weekday, previous week) as the primary benchmark.
+\textbf{Day-of-week patterns.} Sales exhibit a clear weekly cycle, with consistent volumes from Monday through Saturday (mean daily sales between 1.25 and 1.49 units per product). Sunday demand drops sharply to a mean of 0.11 units, with 96.1\% of Sunday observations recording zero sales. This weekly seasonality motivates the inclusion of day-of-week features and the use of a lag-7 naive baseline (same weekday, previous week) as the primary benchmark.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/02_sales_by_day_of_week.png}
-\caption{Average daily sales by day of the week. The weekly cycle is clearly visible, with near-zero sales on Sundays.}
+\caption{Average daily sales by day of the week. Demand is consistent Monday through Saturday, with a sharp drop on Sundays.}
 \label{fig:sales_by_dow}
 \end{figure}
 
