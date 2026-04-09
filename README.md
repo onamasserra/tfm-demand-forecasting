@@ -13,11 +13,11 @@ This project applies machine learning models to forecast daily product demand in
 
 ## Pipeline
 
-| Script | Description |
-|--------|-------------|
-| `01_eda.py` | Exploratory data analysis |
-| `02_preprocessing.py` | Data cleaning and feature engineering |
-| `03_modelling.py` | Tree-based models (RF, XGBoost, LightGBM) with Optuna |
-| `03b_modelling_arima_lstm.py` | ARIMA and LSTM baselines |
-| `04_evaluation.py` | Model evaluation and SHAP interpretability |
-| `05_economic_impact.py` | Safety stock cost analysis and service-level optimisation |
+| Notebook | Description |
+|----------|-------------|
+| `01_eda.ipynb` | Exploratory data analysis |
+| `02_preprocessing.ipynb` | Data cleaning and feature engineering |
+| `03_modelling.ipynb` | Tree-based models (RF, XGBoost, LightGBM) with Optuna |
+| `03b_modelling_arima_lstm.ipynb` | ARIMA and LSTM baselines |
+| `04_evaluation.ipynb` | Model evaluation and SHAP interpretability |
+| `05_economic_impact.ipynb` | Safety stock cost analysis and service-level optimisation |
