@@ -4,7 +4,7 @@ Master's Thesis (TFM) for the MSc in Data Science at Universitat Oberta de Catal
 
 ## Overview
 
-This project applies machine learning models to forecast daily product demand in a retail/distribution context, and translates those forecasts into safety stock recommendations using the Newsvendor framework.
+This project applies machine learning models to forecast daily product demand in a retail/distribution context, and translates those forecasts into safety stock optimisation and holding-cost analysis using a service-level-based safety stock methodology (SS = z × RMSE × √(T + L)).
 
 ## Repository Structure
 
@@ -20,4 +20,4 @@ This project applies machine learning models to forecast daily product demand in
 | `03_modelling.py` | Tree-based models (RF, XGBoost, LightGBM) with Optuna |
 | `03b_modelling_arima_lstm.py` | ARIMA and LSTM baselines |
 | `04_evaluation.py` | Model evaluation and SHAP interpretability |
-| `05_economic_impact.py` | Newsvendor cost analysis and safety stock optimisation |
+| `05_economic_impact.py` | Safety stock cost analysis and service-level optimisation |
