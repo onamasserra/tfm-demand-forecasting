@@ -6,8 +6,8 @@
 \usepackage{natbib}   % ← add this line
 \usepackage{array}
 \usepackage{indentfirst}
-\usepackage{eurosym}  % euro symbol (\euro)
-
+\usepackage{eurosym}
+\usepackage{enumitem} % glossary description list formatting
 
 
 %Introduce Work Data
@@ -61,7 +61,7 @@ The results aim to demonstrate the practical value of applying data science tech
 
 \estructura
 
-\chapter*{Agraïments}
+\chapter*{Acknowledgements}
 
 Aquesta tesi representa no només el resultat del meu esforç acadèmic, sinó també el suport que he rebut de moltes persones al llarg d'aquest viatge. És un plaer expressar la meva gratitud a tots aquells que han fet possible la realització d'aquesta obra.
 
@@ -379,6 +379,66 @@ project timeline, as shown in Figure \ref{fig:gantt}.
 \end{figure}
 \end{landscape}
 
+\section{Project Deliverables}
+
+This project produces the following deliverables:
+
+\begin{itemize}
+
+    \item \textbf{Thesis memory:} The present document, comprising 
+    the academic report of the project, including the 
+    bibliographic review, methodology, implementation, results, 
+    and conclusions.
+
+    \item \textbf{Source code:} A Python codebase covering the full data science 
+    pipeline: data loading and exploration, preprocessing and 
+    cleaning, feature engineering, model training and evaluation, 
+    and economic impact analysis. The code is structured following 
+    the CRISP-DM phases and is documented to ensure reproducibility.
+
+    \item \textbf{Audiovisual presentation:} A recorded video 
+    presentation summarising the project objectives, methodology, 
+    results, and conclusions, submitted as part of the M4 
+    deliverable.
+
+    \item \textbf{Oral defence:} A public defence of the project 
+    before the evaluation tribunal, scheduled for June 2026.
+
+\end{itemize}
+
+\section{Document Structure}
+
+The remainder of this document is organised as follows:
+
+\textbf{Chapter 2 -- State of the Art} presents a bibliographic 
+review of the current landscape of demand forecasting research, 
+covering classical statistical methods, machine learning and deep 
+learning approaches, and the specific challenges of promotional 
+demand forecasting. It also reviews the theoretical framework 
+linking forecast accuracy to inventory costs, including the safety 
+stock model and its relationship to forecast error, which 
+underpins the economic impact analysis carried out in Chapter 3.
+
+\textbf{Chapter 3 -- Design and Implementation} describes the 
+full technical development of the project following the CRISP-DM 
+methodology. It covers data acquisition and description, 
+exploratory data analysis, data preprocessing and cleaning 
+(including stock-out detection and demand reconstruction), feature 
+engineering, model design and training, hyperparameter tuning, 
+and evaluation of results across multiple forecasting algorithms. 
+The chapter concludes with an economic impact analysis comparing 
+inventory costs under the baseline forecasting approach and those 
+achieved by the best-performing model.
+
+\textbf{Chapter 4 -- Conclusions and Future Work} summarises the 
+main findings of the project, reflects critically on the 
+achievement of the initial objectives and the adequacy of the 
+planned methodology, evaluates the ethical and sustainability 
+impacts identified in Chapter 1, and outlines future lines of 
+work that could not be explored within the scope of this project.
+
+
+
 \chapter{State of the Art}
 
 Demand forecasting has evolved significantly over the past decades, transitioning from purely statistical approaches to increasingly sophisticated machine learning methods capable of capturing complex, non-linear patterns in data. The automotive supplier industry provides a particularly compelling context for this evolution, as suppliers must simultaneously manage highly volatile demand across thousands of SKUs, structural shifts in component value pools, and persistent supply chain disruptions driven by geopolitical tensions and electrification uncertainty \citep{bcg2026automotive}. In this environment, accurate demand forecasting is not merely an operational convenience but a strategic necessity. This chapter reviews the current state of research in demand forecasting for inventory management, examining the techniques that have demonstrated effectiveness in industrial and business environments, with particular attention to the automotive sector. The review is structured around three interconnected themes: forecasting methodologies and their comparative performance, the specific challenge of promotional demand prediction, and the critical link between forecast accuracy and inventory cost optimisation.
@@ -392,7 +452,7 @@ However, the M5 forecasting competition, one of the most comprehensive benchmark
 
 In the automotive sector specifically, \citet{fu2026treebased} addressed the challenge of intermittent demand for electric vehicle spare parts using a two-stage random forest model. Their approach separately modelled demand occurrence probability and conditional demand size, recognising that automotive spare parts often exhibit sporadic demand patterns with many zero-demand periods. This methodology proved effective for managing the inherent sparsity in spare parts demand, providing a reliable and interpretable solution for inventory planning in manufacturing environments.
 
-The emergence of deep learning architectures has added another dimension to the forecasting toolkit. Long Short-Term Memory (LSTM) networks, introduced by Hochreiter and Schmidhuber \citep{hochreiter1997lstm}, are a specialised type of recurrent neural network designed to capture long-range temporal dependencies in sequential data. Unlike tree-based methods, which rely on engineered lag features to incorporate temporal information, LSTM processes input data as ordered sequences, with its internal gating mechanism allowing it to selectively retain or discard information from previous time steps. This makes it particularly suited to demand forecasting scenarios where the temporal structure of the data carries predictive value, such as the build-up and post-promotional depression characteristic of promotional periods. \citet{barath2026lstm} demonstrated that LSTM networks can achieve competitive performance across diverse time series benchmarks, while \citet{mardotillah2025hybrid} showed that combining LSTM with classical statistical methods in a hybrid architecture can yield further accuracy improvements, with MAPE values of 3.97\%   compared to 12.39\%  for standalone ARIMA and 4.50\%  for standalone LSTM. In the present work, LSTM is included alongside tree-based methods to provide a comprehensive comparison across machine learning paradigms and to evaluate whether deep learning offers advantages for the specific demand patterns present in the automotive dataset.
+The emergence of deep learning architectures has added another dimension to the forecasting toolkit. Long Short-Term Memory (LSTM) networks, introduced by Hochreiter and Schmidhuber \citep{hochreiter1997lstm}, are a specialised type of recurrent neural network designed to capture long-range temporal dependencies in sequential data. Unlike tree-based methods, which rely on engineered lag features to incorporate temporal information, LSTM processes input data as ordered sequences, with its internal gating mechanism allowing it to selectively retain or discard information from previous time steps. This makes it particularly suited to demand forecasting scenarios where the temporal structure of the data carries predictive value, such as the build-up and post-promotional depression characteristic of promotional periods. \citet{barath2026lstm} demonstrated that LSTM networks can achieve competitive performance on industrial weekly time series when sufficient temporal structure is present, while \citet{mardotillah2025hybrid} showed that combining LSTM with classical statistical methods in a hybrid architecture can yield further accuracy improvements, with MAPE values of 3.97\%   compared to 12.39\%  for standalone ARIMA and 4.50\%  for standalone LSTM. In the present work, LSTM is included alongside tree-based methods to provide a comprehensive comparison across machine learning paradigms and to evaluate whether deep learning offers advantages for the specific demand patterns present in the automotive dataset.
 
 The attention mechanism, originally developed for natural language processing, has also found application in time series forecasting. \citet{debnath2026hybrid} proposed an attention-based CNN-LSTM architecture that achieved strong performance on electricity demand forecasting, with an $R^2$ of 0.9677. While their application domain differs from retail demand, the underlying principles of capturing multi-scale features and assigning varying importance to different time steps are directly transferable to demand forecasting problems.
 
@@ -622,7 +682,7 @@ Table \ref{tab:literature_summary} summarises the key publications reviewed and 
 \citet{yang2025foundation} & Retail & Ensemble (Foundation Models) & WRMSSE & Dual-strategy ensembling on M5 benchmark \\
 \hline
 
-\textbf{Present work} & \textbf{Automotive} & \textbf{ARIMA, XGBoost, LightGBM, RF,LSTM} & \textbf{MAE, RMSE, MAPE, $\sigma_e$} & \textbf{Standard + promotional; economic impact} \\
+\textbf{Present work} & \textbf{Automotive} & \textbf{Naive Baseline, ARIMA, XGBoost, LightGBM, RF,LSTM} & \textbf{MAE, RMSE, MAPE, $\sigma_e$} & \textbf{Standard + promotional; economic impact} \\
 \hline
 \end{tabular}
 \end{table}
@@ -630,8 +690,6 @@ Table \ref{tab:literature_summary} summarises the key publications reviewed and 
 
 
 The present work contributes to this body of research by applying machine learning forecasting techniques to real automotive sector data, addressing both standard and promotional demand scenarios, and explicitly quantifying the economic impact of forecast improvements on inventory costs using the theoretical framework presented in Section 3. This integrated approach (combining methodological rigour in forecasting with practical business impact assessment through safety stock cost analysis) addresses a gap identified in the literature between technical forecasting performance and operational value creation.
-
-
 
 \chapter{Design and Implementation}
 
@@ -693,14 +751,65 @@ Definition of the most relevant terms and acronyms used in the Report.
 
 %Defining the most relevant terms and acronyms used within the Memory.
 
+\begin{description}[style=nextline, leftmargin=3.5cm, labelwidth=3.2cm]
+
+\item[ARIMA] Autoregressive Integrated Moving Average. A classical statistical model for time series forecasting that combines autoregression, differencing, and moving average components.
+
+\item[EDA] Exploratory Data Analysis. The initial phase of data analysis focused on summarising data characteristics through statistics and visualisations.
+
+\item[EWMA] Exponentially Weighted Moving Average. A smoothing technique that assigns exponentially decreasing weights to older observations.
+
+\item[LightGBM] Light Gradient Boosting Machine. A gradient boosting framework that uses histogram-based splitting and leaf-wise tree growth for efficient training.
+
+\item[LSTM] Long Short-Term Memory. A type of recurrent neural network architecture designed to learn long-range temporal dependencies in sequential data.
+
+\item[MAE] Mean Absolute Error. An evaluation metric that measures the average magnitude of forecast errors without considering their direction.
+
+\item[MAPE] Mean Absolute Percentage Error. An evaluation metric that expresses forecast errors as a percentage of actual values.
+
+\item[ML] Machine Learning. A branch of artificial intelligence where algorithms learn patterns from data to make predictions without being explicitly programmed.
+
+\item[Optuna] A hyperparameter optimisation framework that uses Tree-structured Parzen Estimator (TPE) sampling to efficiently search the parameter space.
+
+\item[RMSE] Root Mean Squared Error. An evaluation metric that measures the square root of the average squared differences between predicted and actual values, penalising larger errors more heavily than MAE.
+
+\item[SARIMA] Seasonal ARIMA. An extension of ARIMA that incorporates seasonal components to capture periodic patterns in time series data.
+
+\item[SHAP] SHapley Additive exPlanations. A game-theoretic approach to explain the output of machine learning models by computing the contribution of each feature to individual predictions.
+
+\item[SKU] Stock Keeping Unit. A unique identifier assigned to each distinct product for inventory management and tracking purposes.
+
+\item[SS] Safety Stock. The extra inventory held to mitigate the risk of stockouts caused by demand uncertainty or supply variability.
+
+\item[TPE] Tree-structured Parzen Estimator. A Bayesian optimisation algorithm used by Optuna to efficiently search hyperparameter spaces.
+
+\item[XGBoost] eXtreme Gradient Boosting. A gradient boosting framework that builds decision trees sequentially, incorporating L1/L2 regularisation and column subsampling.
+
+\end{description}
+
 \bibliographystyle{apalike}
 \bibliography{references}
 
 
 \newpage
 \appendix
-List of sections that are too extensive to include in memory and have a self-contained character (e.g. user manuals, installation manuals, etc.)
- 
-Depending on the type of work, there may be no need to add an annex.
+
+\chapter{Source Code Repository}
+
+The complete source code for this project, including all Jupyter notebooks, data files, and configuration, is publicly available on GitHub:
+
+\begin{center}
+\url{https://github.com/onamasserra/tfm-demand-forecasting}
+\end{center}
+
+The repository contains:
+\begin{itemize}
+    \item Six Jupyter notebooks implementing the full analysis pipeline (EDA, preprocessing, modelling, evaluation, and economic impact analysis)
+    \item Raw input data files required to reproduce all results
+    \item A \texttt{requirements.txt} file specifying all Python dependencies
+\end{itemize}
+
+To reproduce the results, clone the repository, create a virtual environment, install the dependencies, and run the notebooks in order (01 through 05). Detailed instructions are provided in the repository's \texttt{README.md}.
 
 \end{document}
+

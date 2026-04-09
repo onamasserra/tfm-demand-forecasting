@@ -99,6 +99,13 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \textbf{Monthly and seasonal patterns.} Monthly aggregated sales show moderate variation across the year, without a single dominant seasonal peak. However, certain months consistently show higher activity, suggesting that calendar-based features (month, week of year) may contribute predictive value.
 
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/09_monthly_by_year.png}
+\caption{Average daily sales by month, broken down by year. Monthly variation is moderate, with no single dominant seasonal peak.}
+\label{fig:monthly_by_year}
+\end{figure}
+
 \textbf{Promotional effects.} Comparing sales during promotional and non-promotional periods revealed that mean sales during promotions (1.36 units) were slightly higher than during non-promotional periods (1.16 units). However, the difference is modest, and the promotional flag alone does not capture the full complexity of promotional demand dynamics, which motivated the engineering of additional promotional features described in Section~3.4.
 
 \begin{figure}[H]
@@ -206,20 +213,20 @@ All lag and rolling features were computed strictly using past data to prevent i
 
 \subsection{Model Selection}
 
-Four forecasting approaches were implemented, spanning a naive baseline and three gradient boosting / ensemble methods:
+Six forecasting approaches were implemented, spanning a naive baseline, a classical time series method (ARIMA), three tree-based ensemble models, and a deep learning architecture (LSTM):
 
 \begin{enumerate}
     \item \textbf{Naive baseline (lag-7):} The simplest possible forecast, predicting that demand on any given day equals the demand observed on the same weekday of the previous week. This baseline exploits the strong weekly autocorrelation identified during exploration and provides a meaningful benchmark against which machine learning models must demonstrate improvement.
 
-    \item \textbf{ARIMA (Seasonal):} A classical time series approach fitted per product using the \texttt{auto\_arima} implementation from the \texttt{pmdarima} library. Each product's demand series was modelled with seasonal ARIMA (SARIMA) with weekly periodicity ($m=7$), automatically selecting the optimal $(p,d,q)(P,D,Q)_7$ orders via stepwise search. ARIMA serves as the classical statistical baseline, representing the best that traditional time series methods can achieve without engineered features.
+    \item \textbf{ARIMA (Seasonal):} A classical time series approach fitted per product using the \texttt{auto\_arima} implementation from the \texttt{pmdarima} library \citep{smith2017pmdarima}. Each product's demand series was modelled with seasonal ARIMA (SARIMA) with weekly periodicity ($m=7$), automatically selecting the optimal $(p,d,q)(P,D,Q)_7$ orders via stepwise search. ARIMA serves as the classical statistical baseline, representing the best that traditional time series methods can achieve without engineered features.
 
-    \item \textbf{Random Forest:} An ensemble of decision trees trained on bootstrap samples with random feature subsets \citep{hyndman2021forecasting}. Random Forest provides robust predictions with built-in protection against overfitting through bagging and feature randomisation.
+    \item \textbf{Random Forest:} An ensemble of decision trees trained on bootstrap samples with random feature subsets \citep{pedregosa2011sklearn}. Random Forest provides robust predictions with built-in protection against overfitting through bagging and feature randomisation.
 
-    \item \textbf{XGBoost:} A gradient boosting framework that builds trees sequentially, with each tree correcting the errors of its predecessors. XGBoost incorporates L1 and L2 regularisation, column subsampling, and efficient handling of sparse data, making it well-suited to the high proportion of zero-demand observations in this dataset.
+    \item \textbf{XGBoost:} A gradient boosting framework that builds trees sequentially, with each tree correcting the errors of its predecessors \citep{chen2016xgboost}. XGBoost incorporates L1 and L2 regularisation, column subsampling, and efficient handling of sparse data, making it well-suited to the high proportion of zero-demand observations in this dataset.
 
-    \item \textbf{LightGBM:} A gradient boosting implementation that uses histogram-based splitting and leaf-wise tree growth, offering faster training times than XGBoost while maintaining competitive accuracy. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}.
+    \item \textbf{LightGBM:} A gradient boosting implementation that uses histogram-based splitting and leaf-wise tree growth, offering faster training times than XGBoost while maintaining competitive accuracy \citep{ke2017lightgbm}. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}.
 
-    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture long-range temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which rely on engineered lag features, LSTM processes input data as ordered sequences, with its internal gating mechanism allowing it to selectively retain or discard information from previous time steps. The model was implemented in PyTorch with a single LSTM layer (32 hidden units), trained on standardised features using 14-day input sequences.
+    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture long-range temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which rely on engineered lag features, LSTM processes input data as ordered sequences, with its internal gating mechanism allowing it to selectively retain or discard information from previous time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer (32 hidden units), trained on standardised features using 14-day input sequences.
 \end{enumerate}
 
 All tree-based models were trained on the full set of 33 input features (the 36 engineered features minus the 3 product-level statistics used only for reference). ARIMA was fitted per product on the raw sales series without engineered features, as is standard for classical time series methods. The LSTM model received the same 33 features as the tree models, but processed them as ordered sequences rather than independent observations. All predictions were clipped to a minimum of zero to prevent negative forecast values.
@@ -237,7 +244,7 @@ Four complementary metrics were used to evaluate forecast performance, as introd
 
 \subsection{Definition of Training and Validation Periods}
 
-A rolling forecast origin validation strategy was adopted to provide a realistic assessment of out-of-sample performance by simulating the sequential nature of real forecasting decisions \citep{makridakis2021m5findings}.
+Models were evaluated using a rolling forecast origin strategy, where the training window expands forward and the model is tested on the next unseen period \citep{hyndman2021forecasting}.
 
 Three validation folds were defined, each with a 30-day test window, working backwards from the most recent date in the dataset:
 
@@ -261,7 +268,7 @@ For each fold, the training set includes all data up to the fold's cutoff date (
 
 \subsection{Hyperparameter Tuning}
 
-Hyperparameters for all three machine learning models were optimised using Optuna \citep{makridakis2021m5findings}, a Bayesian optimisation framework that efficiently explores the parameter space using a Tree-structured Parzen Estimator (TPE) sampler.
+Hyperparameters for all three machine learning models were optimised using Optuna \citep{akiba2019optuna}, a Bayesian optimisation framework that efficiently explores the parameter space using a Tree-structured Parzen Estimator (TPE) sampler.
 
 To balance computational cost with tuning quality, the optimisation was conducted on a representative subset of 50 randomly sampled products using the first validation fold. Each model was allocated 30 Optuna trials, with RMSE on the validation set as the objective function. The optimised hyperparameters were then applied to the full dataset across all validation folds.
 
@@ -324,16 +331,16 @@ Naive (lag-7) & 1.256 & 2.277 & 74.4 & 2.277 \\
 \end{tabular}
 \end{table}
 
-All three tree-based machine learning models substantially outperform both the naive baseline and the deep learning alternative. XGBoost achieves the lowest RMSE (1.631), followed closely by Random Forest and LightGBM (both 1.636). The RMSE improvement over the naive baseline ranges from 23.9\% (ARIMA) to 28.4\% (XGBoost).
+The best-performing model is XGBoost, with an RMSE of 1.631, representing a 28.4\% improvement over the naive baseline (2.277). Random Forest and LightGBM follow closely (both at 1.636), making the three tree-based models virtually interchangeable in accuracy. LSTM (1.662) and ARIMA (1.734) also outperform the baseline substantially, though with a small gap behind the tree models.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.png}
-\caption{Comparison of forecast accuracy (RMSE) across all six models. The three tree-based models form a tight cluster, with ARIMA and LSTM close behind, all substantially outperforming the naive baseline.}
+\caption{Comparison of forecast accuracy (RMSE) across all six models. XGBoost achieves the lowest RMSE, with all ML models substantially outperforming the naive baseline.}
 \label{fig:all_models_comparison}
 \end{figure}
 
-ARIMA achieves an RMSE of 1.734 when fitted to all 861 products, placing it between the LSTM (1.662) and the naive baseline (2.277). This represents a 23.9\% improvement over the naive approach, demonstrating that classical time series methods remain competitive when applied at scale. The LSTM achieves the second-best RMSE (1.662), narrowing the gap with the tree-based models. This result is consistent with the findings of the M5 forecasting competition \citep{makridakis2021m5findings}, where gradient boosting algorithms consistently outperformed both classical statistical methods and standalone deep learning approaches, though the margins were often narrow.
+This ranking is consistent with the findings of the M5 forecasting competition \citep{makridakis2021m5findings}, where gradient boosting algorithms consistently outperformed both classical statistical methods and deep learning approaches.
 
 \subsection{Comparison of Results Across Models}
 
@@ -367,13 +374,6 @@ Promotional demand is consistently harder to predict across all models, though t
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/13_actual_vs_predicted_lgbm.png}
-\caption{Actual vs.\ predicted sales for LightGBM on a sample of products. Points near the diagonal indicate accurate predictions; the cluster near the origin reflects the high proportion of zero-demand observations.}
-\label{fig:actual_vs_predicted}
-\end{figure}
-
-\begin{figure}[H]
-\centering
 \includegraphics[width=0.85\textwidth]{figures/17_error_distributions.png}
 \caption{Distribution of forecast errors by model. The ML models produce tighter, more symmetric error distributions compared to the naive baseline.}
 \label{fig:error_distributions}
@@ -386,7 +386,7 @@ Promotional demand is consistently harder to predict across all models, though t
 \label{fig:per_product_rmse}
 \end{figure}
 
-\textbf{SHAP feature importance.} To understand the drivers of model predictions, SHAP (SHapley Additive exPlanations) analysis was performed on the LightGBM model. Table~\ref{tab:shap_top10} presents the ten most influential features:
+\textbf{SHAP feature importance.} To understand the drivers of model predictions, SHAP (SHapley Additive exPlanations) analysis \citep{lundberg2017shap} was performed on the LightGBM model. Table~\ref{tab:shap_top10} presents the ten most influential features:
 
 \begin{table}[H]
 \centering
@@ -452,7 +452,7 @@ The evaluation yields several key findings:
 
 The transition from a naive forecasting approach to machine learning models has implications beyond numerical accuracy improvements. From an operational perspective, the key process impacts are:
 
-\textbf{Safety stock reduction.} Using the safety stock formulation from Equation~\ref{eq:safety_stock} with a 95\% service level ($z = 1.645$) and per-product protection periods computed as the sum of the replenishment cycle (\texttt{diasEntrePedidos}) and lead time (\texttt{diasLeadtime}) from the company's operational data, the total safety stock across all 861 products decreases from 12,544 units under the naive forecast to 9,090 units under XGBoost --- a reduction of 27.5\%. This means that the same service level can be maintained with significantly less inventory investment.
+\textbf{Safety stock reduction.} Using the safety stock formulation from Equation~\ref{eq:safety_stock} with a 95\% service level ($z = 1.645$) and per-product protection periods computed as the sum of the replenishment cycle (\texttt{diasEntrePedidos}) and lead time (\texttt{diasLeadtime}) from the company's operational data, the total safety stock across all 861 products decreases from 12,544 units under the naive forecast to 9,090 units under XGBoost, a reduction of 27.5\%. This means that the same service level can be maintained with significantly less inventory investment.
 
 \textbf{Forecast error symmetry.} Analysis of error distributions shows that the ML models produce approximately symmetric errors centred near zero, whereas the naive baseline exhibits a slight positive bias (tendency to overforecast). Symmetric errors are preferable for inventory planning, as they indicate that the forecast is equally likely to overestimate or underestimate demand, allowing safety stock to function as intended.
 
