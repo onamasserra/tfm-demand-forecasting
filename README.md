@@ -8,8 +8,21 @@ This project applies machine learning models to forecast daily product demand in
 
 ## Repository Structure
 
-- `TFM_Ona_Code/` — Python analysis pipeline (EDA → Preprocessing → Modelling → Evaluation → Economic Impact)
+- `TFM_Ona_Code/` — Jupyter notebook pipeline (EDA → Preprocessing → Modelling → Evaluation → Economic Impact)
 - `TFM_DS_Ona_Mas_i_Serra/` — LaTeX thesis source files
+- `Datos/` — Raw input data (Excel files)
+
+## Setup
+
+```bash
+git clone https://github.com/onamasserra/tfm-demand-forecasting.git
+cd tfm-demand-forecasting
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then open `TFM_Ona_Code/01_eda.ipynb` in VS Code or Jupyter and run notebooks in order (01 → 05).
 
 ## Pipeline
 

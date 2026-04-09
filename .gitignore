@@ -4,6 +4,7 @@
 # Allow repo essentials
 !.gitignore
 !README.md
+!requirements.txt
 
 # Allow code notebooks and shared config
 !TFM_Ona_Code/
