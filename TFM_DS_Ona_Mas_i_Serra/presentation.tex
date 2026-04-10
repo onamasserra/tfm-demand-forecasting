@@ -1,36 +1,67 @@
 \documentclass[aspectratio=169]{beamer}
 
-% UOC brand colours
+% ── UOC brand colours ──
 \definecolor{darkblueUOC}{RGB}{1,0,115}
 \definecolor{lightblueUOC}{RGB}{147,234,252}
 \definecolor{airblueUOC}{RGB}{92,138,168}
 \definecolor{greyUOC}{RGB}{239,239,239}
 
-% Beamer theme — light blue as main colour
-\usetheme{Madrid}
-\usecolortheme[named=airblueUOC]{structure}
-\setbeamercolor{title}{fg=darkblueUOC, bg=lightblueUOC}
-\setbeamercolor{frametitle}{fg=darkblueUOC, bg=lightblueUOC}
-\setbeamercolor{block title}{fg=darkblueUOC, bg=lightblueUOC}
-\setbeamercolor{block body}{bg=greyUOC}
-\setbeamercolor{item}{fg=darkblueUOC}
-\setbeamertemplate{navigation symbols}{}
+% ── Theme setup (inspired by LDV template) ──
+\usetheme{default}
+\useinnertheme{default}
 \usefonttheme{serif}
+\usepackage{times}
+\setbeamertemplate{navigation symbols}{}
 
-% Footer: slide number only, no author name
-\setbeamertemplate{footline}{
-  \leavevmode
-  \hbox{
-    \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=1ex,right]{date in head/foot}
-      \insertframenumber{} / \inserttotalframenumber\hspace*{2ex}
-    \end{beamercolorbox}
-  }
+% ── Colours ──
+\setbeamercolor{structure}{fg=darkblueUOC}
+\setbeamercolor{normal text}{fg=black, bg=white}
+\setbeamercolor{frametitle}{fg=darkblueUOC, bg=white}
+\setbeamercolor{title}{fg=darkblueUOC}
+\setbeamercolor{subtitle}{fg=airblueUOC}
+\setbeamercolor{author}{fg=darkblueUOC}
+\setbeamercolor{institute}{fg=airblueUOC}
+\setbeamercolor{date}{fg=airblueUOC}
+\setbeamercolor{local structure}{fg=airblueUOC}
+\setbeamercolor{item}{fg=airblueUOC}
+\setbeamercolor{block title}{bg=greyUOC, fg=darkblueUOC}
+\setbeamercolor{block body}{bg=greyUOC!50!white, fg=black}
+\setbeamercolor{block title alerted}{bg=red!20, fg=black}
+\setbeamercolor{block body alerted}{bg=red!10, fg=black}
+\setbeamercolor{block title example}{bg=lightblueUOC!50, fg=darkblueUOC}
+\setbeamercolor{block body example}{bg=lightblueUOC!20, fg=black}
+
+% ── Fonts (LDV style: small title, large frametitle) ──
+\setbeamerfont{title}{size=\large, series=\bfseries}
+\setbeamerfont{subtitle}{size=\normalsize}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{institute}{size=\scriptsize}
+\setbeamerfont{date}{size=\scriptsize}
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\footnotesize}
+\setbeamerfont{block title}{size=\normalsize, series=\bfseries}
+\setbeamerfont{item}{size=\normalsize}
+\setbeamerfont{footnote}{size=\tiny}
+
+% ── Header: UOC logo, no line ──
+\setbeamertemplate{headline}{
+  \vspace{0.2cm}
+  \hfill\includegraphics[height=0.8cm]{UOCllarg.png}\hspace{0.5cm}
+  \par\vspace{0.1cm}
 }
 
-% Section numbering in frame titles
+% ── Footer: Slide N/M only, no line ──
+\setbeamertemplate{footline}{
+  \vspace{2pt}
+  \hfill\textcolor{airblueUOC}{\scriptsize Slide \insertframenumber/\inserttotalframenumber}\hspace{0.5cm}
+  \vspace{4pt}
+}
+
+% ── Frame title with section number ──
 \setbeamertemplate{frametitle}{
-  \vspace*{0.3em}
-  \insertframetitle
+  \vspace{0.3em}
+  \usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\insertframetitle
+  \par\vspace{-0.2em}
 }
 
 \usepackage{graphicx}
@@ -38,18 +69,18 @@
 \usepackage{eurosym}
 \usepackage{multirow}
 \usepackage{hyperref}
-\usepackage{times}
+\usepackage{tabularx}
 
-\title{Demand Forecasting for Safety Stock Optimisation}
-\subtitle{Master's Final Project in Data Science (TFM)}
+\title{Demand Forecasting for Inventory Management Using Machine Learning}
+\subtitle{\vspace{0.5em} Master in Data Science}
 \author{Ona Mas i Serra}
 \institute{
-  Universitat Oberta de Catalunya (UOC)\\[0.3em]
-  \small Supervisor: Lorena Polo Navarro\\
-  \small PRA: Susana Acedo Nadal
+  Universitat Oberta de Catalunya\\[0.3em]
+  Supervisor: Lorena Polo Navarro\\
+  PRA: Susana Acedo Nadal
 }
 \date{June 2026}
-\titlegraphic{\includegraphics[height=1.2cm]{UOCllarg.png}}
+\titlegraphic{\includegraphics[height=1.5cm]{UOCllarg.png}}
 
 \begin{document}
 
@@ -57,7 +88,11 @@
 % TITLE
 % ══════════════════════════════════════════════════════════════
 {
+\setbeamertemplate{headline}{}
 \setbeamertemplate{footline}{}
+\setbeamercolor{subtitle}{fg=darkblueUOC}
+\setbeamercolor{institute}{fg=black}
+\setbeamercolor{date}{fg=black}
 \begin{frame}[noframenumbering]
 \titlepage
 \end{frame}
@@ -100,7 +135,7 @@
     \item More accurate forecasts = less safety stock needed = lower costs
 \end{itemize}
 \vfill
-\begin{block}{Key insight}
+\begin{block}{Safety stock formula}
 Safety stock is directly proportional to forecast error: $SS = z \times RMSE \times \sqrt{T + L}$
 \end{block}
 \end{frame}
@@ -162,16 +197,26 @@ Safety stock is directly proportional to forecast error: $SS = z \times RMSE \ti
 \section{Methodology}
 
 \begin{frame}{3. Methodology: Pipeline}
-\begin{center}
-\textbf{EDA} $\rightarrow$ \textbf{Preprocessing} $\rightarrow$ \textbf{Feature Engineering} $\rightarrow$ \textbf{Modelling} $\rightarrow$ \textbf{Evaluation} $\rightarrow$ \textbf{Economic Impact}
-\end{center}
+\begin{table}
+\centering
+\small
+\begin{tabular}{clp{7cm}}
+\toprule
+\textbf{Step} & \textbf{Phase} & \textbf{Description} \\
+\midrule
+1 & EDA & Exploratory analysis of demand patterns \\
+2 & Preprocessing & Stock break imputation (2\%), outlier capping (1.4\%) \\
+3 & Feature Engineering & 33 features: calendar, lags, rolling stats, EWMA, promotional \\
+4 & Modelling & 6 models trained with rolling validation (3 folds, 30 days) \\
+5 & Evaluation & Accuracy metrics, SHAP interpretability, error analysis \\
+6 & Economic Impact & Safety stock cost comparison using real company data \\
+\bottomrule
+\end{tabular}
+\end{table}
 \vfill
 \begin{itemize}
     \item CRISP-DM methodology
-    \item Stock break imputation (2\% of observations)
-    \item Outlier capping (3$\sigma$ per product-month, 1.4\% capped)
-    \item 33 engineered features: calendar, lags, rolling statistics, EWMA, promotional
-    \item Rolling forecast origin validation (3 folds, 30 days each)
+    \item Hyperparameter tuning with Optuna (30 trials per model)
 \end{itemize}
 \end{frame}
 
@@ -240,9 +285,6 @@ Naive (lag-7) & 1.256 & 2.277 & 74.4\% & 2.277 \\
 \begin{center}
 \includegraphics[width=0.85\textwidth]{figures/17_error_distributions.png}
 \end{center}
-\begin{itemize}
-    \item ML models produce tighter, more symmetric error distributions
-\end{itemize}
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════
@@ -345,17 +387,13 @@ All three tree-based models save approximately \textbf{\euro3.1 million per year
 % THANK YOU
 % ══════════════════════════════════════════════════════════════
 {
+\setbeamertemplate{headline}{}
 \setbeamertemplate{footline}{}
+\setbeamercolor{subtitle}{fg=darkblueUOC}
+\setbeamercolor{institute}{fg=black}
+\setbeamercolor{date}{fg=black}
 \begin{frame}[noframenumbering]
-\begin{center}
-\vfill
-{\Large\color{darkblueUOC} Thank you}
-\vfill
-{\large Ona Mas i Serra}\\[0.5em]
-{\normalsize Master in Data Science, UOC}\\[0.5em]
-{\small \url{https://github.com/onamasserra/tfm-demand-forecasting}}
-\vfill
-\end{center}
+\titlepage
 \end{frame}
 }
 

@@ -9,6 +9,7 @@
 # Allow code notebooks and shared config
 !TFM_Ona_Code/
 !TFM_Ona_Code/*.ipynb
+!TFM_Ona_Code/*.html
 !TFM_Ona_Code/style_config.py
 
 # Allow LaTeX thesis source
