@@ -124,6 +124,15 @@ The exploratory analysis examined demand patterns across several dimensions:
 \label{fig:autocorrelation}
 \end{figure}
 
+\textbf{Seasonal decomposition.} A classical additive decomposition of the aggregated daily sales series was performed with a weekly period ($p=7$), separating the observed signal into trend, seasonal, and residual components. The trend component reveals a stable demand level across the two-year period, while the seasonal component confirms the strong weekly cycle identified in the autocorrelation analysis. The residual component shows no systematic patterns, suggesting that the weekly periodicity captures the dominant temporal structure in the data.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/10b_seasonal_decomposition.png}
+\caption{Additive seasonal decomposition of aggregated daily sales (period = 7 days). The weekly seasonal component is clearly visible, with a stable trend and no systematic residual patterns.}
+\label{fig:seasonal_decomposition}
+\end{figure}
+
 \subsection{Data Quality Analysis}
 
 The data quality assessment identified the following issues:
@@ -204,7 +213,7 @@ All lag and rolling features were computed strictly using past data to prevent i
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/10_feature_correlations.png}
-\caption{Correlation matrix of the engineered features. Strong correlations are visible among rolling statistics at different window sizes, confirming the presence of redundant but complementary temporal signals.}
+\caption{Pearson correlation of each engineered feature with the target variable (\texttt{udsVenta}). The 28-day EWMA and rolling mean features show the strongest positive correlation with sales.}
 \label{fig:feature_correlations}
 \end{figure}
 
@@ -480,7 +489,7 @@ The ML models consistently require approximately 27\% less safety stock than the
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/21_safety_stock_by_service_level.png}
-\caption{Total safety stock requirements by model and service level. XGBoost and the other tree-based models maintain a consistent 27\% advantage over the naive baseline across all service levels tested (90\%, 95\%, 99\%).}
+\caption{Total safety stock requirements by model and service level. The tree-based models maintain a consistent 27\% advantage over the naive baseline across all service levels tested (90\%, 95\%, 99\%).}
 \label{fig:safety_stock_service_level}
 \end{figure}
 
