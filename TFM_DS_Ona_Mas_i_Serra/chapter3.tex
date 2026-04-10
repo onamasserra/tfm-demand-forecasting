@@ -119,7 +119,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/08_autocorrelation_sample.png}
+\includegraphics[width=0.95\textwidth]{figures/08_autocorrelation_sample.png}
 \caption{Autocorrelation function (ACF) for a sample of products, showing significant positive autocorrelation at weekly intervals.}
 \label{fig:autocorrelation}
 \end{figure}
@@ -277,7 +277,7 @@ For each fold, the training set includes all data up to the fold's cutoff date (
 
 \subsection{Hyperparameter Tuning}
 
-Hyperparameters for all three machine learning models were optimised using Optuna \citep{akiba2019optuna}, a Bayesian optimisation framework that efficiently explores the parameter space using a Tree-structured Parzen Estimator (TPE) sampler.
+Hyperparameters for the three tree-based models were optimised using Optuna \citep{akiba2019optuna}, a Bayesian optimisation framework that efficiently explores the parameter space using a Tree-structured Parzen Estimator (TPE) sampler.
 
 To balance computational cost with tuning quality, the optimisation was conducted on a representative subset of 50 randomly sampled products using the first validation fold. Each model was allocated 30 Optuna trials, with RMSE on the validation set as the objective function. The optimised hyperparameters were then applied to the full dataset across all validation folds.
 
@@ -364,33 +364,37 @@ This ranking is consistent with the findings of the M5 forecasting competition \
 \hline
 \textbf{Segment} & \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-\multirow{4}{*}{Non-Promo} & XGBoost & 1.089 & 1.638 & 51.2 & 1.637 \\
+\multirow{6}{*}{Non-Promo} & XGBoost & 1.089 & 1.638 & 51.2 & 1.637 \\
  & LightGBM & 1.118 & 1.642 & 50.0 & 1.641 \\
  & Random Forest & 1.086 & 1.643 & 50.1 & 1.642 \\
+ & LSTM & 1.130 & 1.678 & 72.5 & 1.672 \\
+ & ARIMA & 1.195 & 1.732 & 76.4 & 1.729 \\
  & Naive (lag-7) & 1.237 & 2.288 & 74.2 & 2.288 \\
 \hline
-\multirow{4}{*}{Promo} & XGBoost & 1.165 & 1.607 & 48.9 & 1.607 \\
+\multirow{6}{*}{Promo} & XGBoost & 1.165 & 1.607 & 48.9 & 1.607 \\
  & LightGBM & 1.175 & 1.615 & 49.3 & 1.615 \\
  & Random Forest & 1.146 & 1.611 & 49.4 & 1.611 \\
+ & LSTM & 1.227 & 1.657 & 83.1 & 1.642 \\
+ & ARIMA & 1.271 & 1.740 & 80.9 & 1.739 \\
  & Naive (lag-7) & 1.326 & 2.233 & 74.9 & 2.233 \\
 \hline
 \end{tabular}
 \end{table}
 
-Promotional demand is consistently harder to predict across all models, though the difference is less pronounced in this dataset. However, the ML models maintain their advantage over the naive baseline in both segments, with RMSE improvements of approximately 28\% for both non-promotional and promotional demand.
+Promotional demand is consistently harder to predict across all models, though the difference is less pronounced in this dataset. All five ML models maintain their advantage over the naive baseline in both segments. The tree-based models achieve RMSE improvements of approximately 28\%, while LSTM and ARIMA also outperform the naive baseline by meaningful margins.
 
 \textbf{Per-product RMSE distribution.} Analysis at the individual product level reveals that the tree-based models achieve a median per-product RMSE of approximately 1.32, compared to 1.83 for the naive baseline. The improvement is not uniform: some products see RMSE reductions exceeding 8 units, while approximately 35 products show marginally worse performance with ML than with the naive approach. These products tend to have very low and stable demand where the simple lag-7 heuristic is already near-optimal.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/17_error_distributions.png}
+\includegraphics[width=0.95\textwidth]{figures/17_error_distributions.png}
 \caption{Distribution of forecast errors for all six models. The tree-based models produce tighter, more symmetric error distributions compared to the naive baseline, with ARIMA and LSTM falling in between.}
 \label{fig:error_distributions}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/18_per_product_rmse_dist.png}
+\includegraphics[width=0.95\textwidth]{figures/18_per_product_rmse_dist.png}
 \caption{Distribution of per-product RMSE values: Naive vs each ML model. All five models shift the distribution towards lower RMSE values, with the three tree-based models showing the largest improvement.}
 \label{fig:per_product_rmse}
 \end{figure}
@@ -476,9 +480,11 @@ The transition from a naive forecasting approach to machine learning models has 
 \hline
 \textbf{Model} & \textbf{90\%} & \textbf{95\%} & \textbf{99\%} \\
 \hline
-XGBoost & 7,083 & 9,090 & 12,856 \\
-Random Forest & 7,094 & 9,105 & 12,876 \\
-LightGBM & 7,116 & 9,133 & 12,916 \\
+XGBoost & 7,105 & 9,119 & 12,897 \\
+Random Forest & 7,098 & 9,110 & 12,884 \\
+LightGBM & 7,091 & 9,101 & 12,872 \\
+LSTM & 7,291 & 9,358 & 13,235 \\
+ARIMA & 7,482 & 9,604 & 13,583 \\
 Naive (lag-7) & 9,773 & 12,544 & 17,740 \\
 \hline
 \end{tabular}
@@ -525,29 +531,40 @@ Table~\ref{tab:economic_summary} presents the total annual safety stock cost for
 \textbf{Model} & \textbf{Avg RMSE} & \textbf{Total SS (units)} & \textbf{Annual Cost (\euro)} & \textbf{Savings vs Naive} \\
 \hline
 Naive (lag-7) & 2.01 & 12,544 & 11,398,048 & --- \\
-XGBoost & 1.45 & 9,090 & 8,307,074 & \euro3,090,974 (27.1\%) \\
-Random Forest & 1.45 & 9,105 & 8,310,660 & \euro3,087,388 (27.1\%) \\
-LightGBM & 1.46 & 9,133 & 8,341,910 & \euro3,056,137 (26.8\%) \\
+XGBoost & 1.46 & 9,119 & 8,323,780 & \euro3,074,268 (27.0\%) \\
+Random Forest & 1.45 & 9,110 & 8,315,979 & \euro3,082,069 (27.0\%) \\
+LightGBM & 1.45 & 9,101 & 8,324,624 & \euro3,073,424 (27.0\%) \\
+LSTM & 1.49 & 9,358 & 8,556,841 & \euro2,841,207 (24.9\%) \\
+ARIMA & 1.53 & 9,604 & 8,837,910 & \euro2,560,138 (22.5\%) \\
 \hline
 \end{tabular}
 \end{table}
 
-XGBoost achieves the lowest total annual cost, saving approximately \euro3.1 million annually (27.1\%) compared to the naive baseline. The three ML models perform nearly identically in economic terms, with total cost differences of less than \euro35,000 between them.
+All five ML models achieve substantial savings compared to the naive baseline. The three tree-based models perform nearly identically, saving approximately 27\% (\euro3.1M annually). LSTM follows closely with a 24.9\% reduction, while ARIMA, despite being the weakest ML model, still delivers a 22.5\% cost reduction. The total cost differences among the three tree-based models are less than \euro9,000.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/20_annual_cost_comparison.png}
-\caption{Annual safety stock cost by model. All three tree-based models reduce total annual costs by approximately 27\% compared to the naive baseline.}
+\caption{Annual safety stock cost by model. All five ML models reduce total annual costs compared to the naive baseline, with the three tree-based models achieving approximately 27\% savings.}
 \label{fig:annual_cost_comparison}
+\end{figure}
+
+Figure~\ref{fig:per_product_cost_comparison} provides a per-product view of the cost savings. Each subplot compares the annual safety stock cost of the naive baseline (grey) against one of the five ML models, for the top 200 products ranked by naive cost. The gap between the two curves represents the savings for each product. The three tree-based models show nearly identical savings patterns, while ARIMA and LSTM also achieve consistent reductions, though slightly smaller in magnitude.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/25_per_product_cost_comparison.png}
+\caption{Per-product annual safety stock cost for the top 200 products (ranked by naive cost). Grey area: naive baseline. Coloured area: ML model. The gap represents cost savings.}
+\label{fig:per_product_cost_comparison}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/22_safety_stock_distribution.png}
-\caption{Per-product safety stock distribution: Naive vs each tree-based model. All three ML models shift the distribution towards lower safety stock requirements across the product portfolio.}
+\includegraphics[width=0.95\textwidth]{figures/22_safety_stock_distribution.png}
+\caption{Per-product safety stock distribution: Naive vs each ML model. All five ML models shift the distribution towards lower safety stock requirements across the product portfolio.}
 \label{fig:safety_stock_distribution}
 \end{figure}
 
-These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The 27\% reduction in RMSE corresponds to a 27\% reduction in annual safety stock costs, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
+These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The tree-based models achieve approximately 27\% cost savings, LSTM saves nearly 25\%, and even ARIMA delivers a 22.5\% reduction, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
 
-It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis supervisor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained regardless of the risk tolerance adopted by the organisation.
+It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis supervisor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained for all five models regardless of the risk tolerance adopted by the organisation.
