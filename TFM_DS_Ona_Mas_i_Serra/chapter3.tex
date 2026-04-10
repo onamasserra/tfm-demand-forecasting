@@ -111,7 +111,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/05_promo_vs_nonpromo.png}
-\caption{Comparison of sales distributions during promotional and non-promotional periods.}
+\caption{Comparison of sales distributions during promotional and non-promotional periods. Mean sales during promotions (1.36 units) are slightly higher than non-promotional periods (1.16 units).}
 \label{fig:promo_vs_nonpromo}
 \end{figure}
 
@@ -315,15 +315,15 @@ Table~\ref{tab:results_summary} presents the average performance of each model a
 \begin{table}[H]
 \centering
 \small
-\caption{Average forecast accuracy across three rolling validation folds.}
+\caption{Forecast accuracy on the last validation fold (30 days, 861 products).}
 \label{tab:results_summary}
 \begin{tabular}{|l|r|r|r|r|}
 \hline
 \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-XGBoost & 1.105 & 1.631 & 50.7 & 1.631 \\
-Random Forest & 1.099 & 1.636 & 49.9 & 1.635 \\
-LightGBM & 1.130 & 1.636 & 49.9 & 1.635 \\
+LightGBM & 1.097 & 1.633 & 51.5 & 1.633 \\
+XGBoost & 1.121 & 1.635 & 50.0 & 1.634 \\
+Random Forest & 1.098 & 1.637 & 50.0 & 1.636 \\
 LSTM & 1.148 & 1.662 & 49.6 & 1.655 \\
 ARIMA & 1.211 & 1.734 & 53.9 & 1.732 \\
 Naive (lag-7) & 1.256 & 2.277 & 74.4 & 2.277 \\
@@ -331,12 +331,12 @@ Naive (lag-7) & 1.256 & 2.277 & 74.4 & 2.277 \\
 \end{tabular}
 \end{table}
 
-The best-performing model is XGBoost, with an RMSE of 1.631, representing a 28.4\% improvement over the naive baseline (2.277). Random Forest and LightGBM follow closely (both at 1.636), making the three tree-based models virtually interchangeable in accuracy. LSTM (1.662) and ARIMA (1.734) also outperform the baseline substantially, though with a small gap behind the tree models.
+The three tree-based models achieve virtually identical performance, with LightGBM holding a marginal edge (RMSE 1.633 vs 1.635 for XGBoost and 1.637 for Random Forest). All three reduce RMSE by approximately 28\% compared to the naive baseline (2.277). LSTM (1.662) and ARIMA (1.734) also outperform the baseline substantially, though with a small gap behind the tree models.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.png}
-\caption{Comparison of forecast accuracy (RMSE) across all six models. XGBoost achieves the lowest RMSE, with all ML models substantially outperforming the naive baseline.}
+\caption{Comparison of forecast accuracy (RMSE) across all six models. The three tree-based models form a tight cluster with virtually identical performance, all substantially outperforming the naive baseline.}
 \label{fig:all_models_comparison}
 \end{figure}
 
@@ -370,19 +370,19 @@ This ranking is consistent with the findings of the M5 forecasting competition \
 
 Promotional demand is consistently harder to predict across all models, though the difference is less pronounced in this dataset. However, the ML models maintain their advantage over the naive baseline in both segments, with RMSE improvements of approximately 28\% for both non-promotional and promotional demand.
 
-\textbf{Per-product RMSE distribution.} Analysis at the individual product level reveals that LightGBM achieves a median per-product RMSE of 1.32, compared to 1.83 for the naive baseline. The improvement is not uniform: some products see RMSE reductions exceeding 8 units, while approximately 10 products show marginally worse performance with ML than with the naive approach. These products tend to have very low and stable demand where the simple lag-7 heuristic is already near-optimal.
+\textbf{Per-product RMSE distribution.} Analysis at the individual product level reveals that the tree-based models achieve a median per-product RMSE of approximately 1.32, compared to 1.83 for the naive baseline. The improvement is not uniform: some products see RMSE reductions exceeding 8 units, while approximately 35 products show marginally worse performance with ML than with the naive approach. These products tend to have very low and stable demand where the simple lag-7 heuristic is already near-optimal.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/17_error_distributions.png}
-\caption{Distribution of forecast errors by model. The ML models produce tighter, more symmetric error distributions compared to the naive baseline.}
+\caption{Distribution of forecast errors for Naive, Random Forest, XGBoost, and LightGBM. The tree-based models produce tighter, more symmetric error distributions compared to the naive baseline.}
 \label{fig:error_distributions}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/18_per_product_rmse_dist.png}
-\caption{Distribution of per-product RMSE values. The ML models shift the distribution towards lower RMSE values compared to the naive baseline.}
+\caption{Distribution of per-product RMSE values: Naive vs each tree-based model. All three ML models shift the distribution towards lower RMSE values across the product portfolio.}
 \label{fig:per_product_rmse}
 \end{figure}
 
@@ -480,7 +480,7 @@ The ML models consistently require approximately 27\% less safety stock than the
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/21_safety_stock_by_service_level.png}
-\caption{Total safety stock requirements by model and service level. The ML models maintain a consistent ~27\% advantage over the naive baseline across all service levels.}
+\caption{Total safety stock requirements by model and service level. XGBoost and the other tree-based models maintain a consistent 27\% advantage over the naive baseline across all service levels tested (90\%, 95\%, 99\%).}
 \label{fig:safety_stock_service_level}
 \end{figure}
 
@@ -528,14 +528,14 @@ XGBoost achieves the lowest total annual cost, saving approximately \euro3.1 mil
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/20_annual_cost_comparison.png}
-\caption{Annual safety stock cost by model. The ML models reduce total costs by approximately 27\% compared to the naive baseline.}
+\caption{Annual safety stock cost by model. All three tree-based models reduce total annual costs by approximately 27\% compared to the naive baseline.}
 \label{fig:annual_cost_comparison}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/22_safety_stock_distribution.png}
-\caption{Per-product safety stock distribution: Naive vs XGBoost. The ML model shifts the distribution towards lower safety stock requirements across the product portfolio.}
+\caption{Per-product safety stock distribution: Naive vs each tree-based model. All three ML models shift the distribution towards lower safety stock requirements across the product portfolio.}
 \label{fig:safety_stock_distribution}
 \end{figure}
 
