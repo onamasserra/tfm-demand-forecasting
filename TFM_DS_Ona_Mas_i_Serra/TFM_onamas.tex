@@ -706,43 +706,7 @@ The present work contributes to this body of research by applying machine learni
 
 \chapter{Conclusions and future works}
 
-%\section{Conclusions}
-This chapter must include:
-\begin{itemize}
-\item A description of the conclusions of the work:
-\begin{itemize}
-    \item Once the results have been obtained, what conclusions are drawn?
-    \item Are these results as expected? Or have they been amazing? Why?
-\end{itemize}
-\item A critical reflection on the achievement of the objectives initially set:
-\begin{itemize}
-    \item Have we achieved all the objectives? If the answer is negative, why?
-\end{itemize}
-\item A critical analysis of the monitoring of planning and methodology throughout the product:
-\begin{itemize}
-    \item Has the schedule been followed?
-    \item Has the planned methodology been adequate enough?
-    \item Has it been necessary to introduce changes to ensure the success of the work? Why?
-\end{itemize}
-\item From the impacts foreseen in \ref{s:etic}, ethical-social, sustainability and diversity, evaluate/mention whether they have been mitigated (if they were negative) or whether they have been achieved (if they were positive). 
-\item If unforeseen impacts have appeared in \ref{s:etic}, evaluate/mention how they have mitigated (if they were negative) or what they have contributed (if they were positive).
-\item The future lines of work that have not been explored in this work and have remained pending.
-
-
-%\item A description of the conclusions of the work: What lessons have been learned from work?
-%\item A critical reflection on the achievement of the objectives initially set: Have we achieved all the objectives? If the answer is negative, why?
-%\item Of the impacts foreseen in the section \ref{s:etic}, an assessment, or at least mention, of whether they have been mitigated (if they were negative) or whether they have been achieved (if they were positive). 
-\end{itemize}
-
-%\section{Future Lines}
-%The future lines of work that could not be explored in this work and have been pending.
-
-%\section{Schedule Tracking}
-%A critical analysis of the monitoring of the planning and methodology throughout the work: 
-%\begin{itemize}
-%    \item  Have the schedule been followed? 
-%    \item Has the planned methodology been adequate? 
-%    \item Has it been necessary to introduce changes to ensure the success of the work? Why?
+\input{chapter4}
 %\end{itemize}
 
 \chapter{Glossary}
@@ -755,9 +719,21 @@ Definition of the most relevant terms and acronyms used in the Report.
 
 \item[ARIMA] Autoregressive Integrated Moving Average. A classical statistical model for time series forecasting that combines autoregression, differencing, and moving average components.
 
+\item[Bagging] Bootstrap Aggregating. An ensemble technique that trains multiple models on different random subsets of the data and averages their predictions to reduce variance.
+
+\item[Boosting] An ensemble technique that trains models sequentially, with each new model focusing on correcting the errors of its predecessors.
+
+\item[CRISP-DM] Cross-Industry Standard Process for Data Mining. A methodology that defines six phases for data science projects: business understanding, data understanding, data preparation, modelling, evaluation, and deployment.
+
 \item[EDA] Exploratory Data Analysis. The initial phase of data analysis focused on summarising data characteristics through statistics and visualisations.
 
-\item[EWMA] Exponentially Weighted Moving Average. A smoothing technique that assigns exponentially decreasing weights to older observations.
+\item[EWMA] Exponentially Weighted Moving Average. A smoothing technique that assigns exponentially decreasing weights to older observations, giving more importance to recent data.
+
+\item[Hyperparameter] A configuration value set before model training that controls the learning process (e.g., number of trees, learning rate, maximum depth). Unlike model parameters, hyperparameters are not learned from the data.
+
+\item[Imputation] The process of replacing missing or unreliable data values with estimated substitutes, based on domain knowledge or statistical methods.
+
+\item[Lead time] The time elapsed between placing an order with a supplier and receiving the goods. In this work, represented by the variable \texttt{diasLeadtime}.
 
 \item[LightGBM] Light Gradient Boosting Machine. A gradient boosting framework that uses histogram-based splitting and leaf-wise tree growth for efficient training.
 
@@ -771,15 +747,23 @@ Definition of the most relevant terms and acronyms used in the Report.
 
 \item[Optuna] A hyperparameter optimisation framework that uses Tree-structured Parzen Estimator (TPE) sampling to efficiently search the parameter space.
 
+\item[Overfitting] A modelling error where a model learns noise in the training data rather than the underlying pattern, resulting in poor performance on unseen data.
+
+\item[Protection period] The total time during which inventory must cover demand uncertainty, computed as the sum of the replenishment cycle ($T$) and lead time ($L$).
+
 \item[RMSE] Root Mean Squared Error. An evaluation metric that measures the square root of the average squared differences between predicted and actual values, penalising larger errors more heavily than MAE.
 
 \item[SARIMA] Seasonal ARIMA. An extension of ARIMA that incorporates seasonal components to capture periodic patterns in time series data.
+
+\item[Service level] The probability that demand will be fully satisfied during the protection period. A 95\% service level means there is a 5\% chance of a stockout.
 
 \item[SHAP] SHapley Additive exPlanations. A game-theoretic approach to explain the output of machine learning models by computing the contribution of each feature to individual predictions.
 
 \item[SKU] Stock Keeping Unit. A unique identifier assigned to each distinct product for inventory management and tracking purposes.
 
 \item[SS] Safety Stock. The extra inventory held to mitigate the risk of stockouts caused by demand uncertainty or supply variability.
+
+\item[Stockout] An event where demand for a product cannot be fulfilled because inventory has been depleted. Also known as a stock break.
 
 \item[TPE] Tree-structured Parzen Estimator. A Bayesian optimisation algorithm used by Optuna to efficiently search hyperparameter spaces.
 

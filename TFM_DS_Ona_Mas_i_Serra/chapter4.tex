@@ -1,0 +1,92 @@
+% chapter4.tex — Conclusions and Future Work
+% This file is included via \input{chapter4} in TFM_onamas.tex
+
+\section{Conclusions}
+
+This project set out to develop machine learning models for daily demand forecasting in the automotive sector and to evaluate their impact on safety stock costs. The results confirm that tree-based ensemble methods (Random Forest, XGBoost, and LightGBM) substantially outperform both the naive lag-7 baseline and classical time series approaches, reducing forecast error by approximately 28\% and translating into annual safety stock cost savings of approximately 27\%.
+
+The three tree-based models achieved virtually identical performance (RMSE between 1.633 and 1.637 on the last validation fold), indicating that the choice among them is less important than the decision to adopt ML-based forecasting over the naive approach. ARIMA and LSTM also outperformed the baseline, though with a smaller margin, confirming that the engineered features (lag values, rolling statistics, and EWMA) capture demand patterns more effectively than raw time series modelling alone.
+
+The SHAP analysis revealed that the 28-day exponentially weighted moving average is the single most influential predictor, followed by day-of-week and rolling mean features. This finding validates the feature engineering strategy and provides interpretable guidance for practitioners: smoothed recent demand history is the strongest signal for short-term forecasting in this domain.
+
+The economic impact analysis, using real per-product cost parameters provided by the company (replenishment cycles, lead times, and unit prices), demonstrated that the ML models reduce total annual safety stock costs from approximately \euro11.4 million to \euro8.3 million, a saving of approximately \euro3.1 million per year. This result is robust across different service levels (90\%, 95\%, 99\%), with the relative advantage of ML models remaining consistent.
+
+\section{Achievement of Objectives}
+
+The specific objectives defined in Chapter 1 were addressed as follows:
+
+\begin{enumerate}
+    \item \textit{Bibliographic review:} Chapter 2 presents a comprehensive review of demand forecasting methods, covering classical statistical approaches, machine learning, deep learning, and the theoretical framework linking forecast accuracy to inventory costs. This objective was fully achieved.
+
+    \item \textit{Data exploration and preparation:} The dataset (861 products, 731 days, 629,391 observations) was thoroughly explored, cleaned, and prepared. Stock break imputation, outlier capping, and feature engineering produced a final set of 33 input features. This objective was fully achieved.
+
+    \item \textit{Forecasting models for standard demand:} Six models were implemented and evaluated using a rolling forecast origin strategy with three 30-day validation folds. This objective was fully achieved.
+
+    \item \textit{Promotional demand forecasting:} Promotional features were engineered (days since promotion end, post-promotion indicator, promotion-lag interaction) and model performance was evaluated separately for promotional and non-promotional segments. The results showed that promotional demand is harder to predict, though the ML models maintain their advantage over the baseline in both segments. This objective was achieved, though the promotional effect in this dataset was modest.
+
+    \item \textit{Comparison against baseline:} All ML models were compared against the naive lag-7 baseline across four metrics (MAE, RMSE, MAPE, $\sigma_e$). The improvement was consistent and substantial. This objective was fully achieved.
+
+    \item \textit{Economic impact evaluation:} The safety stock cost analysis was conducted using real company data, demonstrating annual savings of approximately \euro3.1 million. This objective was fully achieved.
+\end{enumerate}
+
+\section{Planning and Methodology}
+
+The CRISP-DM methodology provided an adequate framework for this project. The planned schedule was followed with minor adjustments: the ARIMA model required approximately 2.5 hours of computation time per execution (fitting 861 individual models), which was not anticipated in the initial planning. The addition of LSTM as a sixth model was introduced during the implementation phase to provide a deep learning comparison, extending the original scope slightly.
+
+The rolling forecast origin validation strategy proved appropriate for this time series problem, avoiding the data leakage risks associated with standard cross-validation. The use of Optuna for hyperparameter tuning on a representative subset of 50 products was an effective compromise between computational cost and tuning quality.
+
+\section{Ethical, Sustainability, and Diversity Impacts}
+
+The sustainability impacts anticipated in Section~\ref{s:etic} have been partially realised through this work. The demonstrated reduction in safety stock requirements (27\% fewer units across the product portfolio) would, if deployed, contribute to reduced overproduction and more efficient use of warehousing resources, aligned with SDG 12 (Responsible Consumption and Production).
+
+The ethical considerations identified remain valid: the dataset was fully anonymised, no personal data was processed, and the work does not involve human subjects or demographic profiling. The potential negative impact of automation on manual planning roles, noted in Chapter 1, remains a consideration for any real-world deployment of these models.
+
+No unforeseen ethical or sustainability impacts emerged during the project.
+
+\section{Lessons Learned}
+
+This project reinforced several practical insights about applied data science:
+
+Feature engineering matters more than model selection. The three tree-based models achieved nearly identical results despite using fundamentally different learning strategies (bagging vs gradient boosting). The shared factor was the same set of engineered features, particularly the smoothed demand history (EWMA, rolling statistics) and lag values. Investing time in understanding the data and crafting meaningful features yielded more value than fine-tuning model architectures. For example, the 28-day EWMA alone accounted for a mean absolute SHAP value of 0.473, more than the next four features combined.
+
+Data quality issues require domain knowledge. Identifying stock breaks (zero sales with zero stock) as supply-side constraints rather than genuine zero demand required understanding the business context. Approximately 2\% of observations fell into this category. Without the imputation strategy informed by the supervisor's domain expertise, these observations would have biased the models towards underforecasting for affected products.
+
+Simple baselines are surprisingly strong. The naive lag-7 baseline, which simply repeats last week's sales, already captures the dominant weekly pattern in the data. The ML models improved on it by 28\%, but this required substantial effort in feature engineering, hyperparameter tuning, and validation design. In practice, the marginal value of ML over a well-chosen baseline should always be weighed against the implementation complexity.
+
+Validation design is critical for time series. Using rolling forecast origin validation instead of standard cross-validation was essential to avoid data leakage and produce realistic performance estimates. Early experiments with random train/test splits produced artificially low error rates that did not reflect real forecasting conditions. The rolling strategy, while more computationally expensive (requiring three full training cycles), provided confidence that the reported accuracy is achievable in production.
+
+The zero-inflation challenge shapes everything. With 65.3\% of observations recording zero sales, the dataset is dominated by non-events. This affected every stage of the pipeline: the choice of evaluation metrics (MAPE is unreliable when actuals are zero), the feature engineering strategy (rolling statistics must handle long stretches of zeros), and the interpretation of results (a model that simply predicts zero for everything would already achieve 65\% accuracy by count). Recognising this characteristic early and designing the methodology around it was essential.
+
+\section{Limitations}
+
+Several limitations of this work should be acknowledged:
+
+\textbf{Single-company, single-sector dataset.} All results are based on data from one company in the automotive sector. The demand patterns, seasonality, and promotional dynamics observed may not generalise to other industries (e.g., fast-moving consumer goods, fashion, or perishable products). The conclusions about model performance and economic impact are specific to this context.
+
+\textbf{One-day-ahead forecasting horizon.} The models predict demand one day at a time, using actual past values as inputs. In a real deployment scenario, forecasting further ahead (e.g., over the full protection period of 19 days) would require recursive multi-step prediction, where each forecast uses previous forecasts as inputs. This would likely increase forecast error compared to the one-step results reported here.
+
+\textbf{Static feature set.} The 33 engineered features were defined once and used across all products. No product-specific feature selection was performed. Some products with unusual demand patterns (e.g., highly seasonal or event-driven) might benefit from tailored feature sets.
+
+\textbf{No external variables.} The models rely exclusively on historical sales, stock levels, calendar, and promotional data. External factors such as macroeconomic conditions, competitor actions, raw material prices, or supply chain disruptions are not captured. These factors could be significant drivers of demand in the automotive sector.
+
+\textbf{Anonymised product identifiers.} Because all product references are anonymised, it was not possible to investigate product-specific characteristics (e.g., product category, price segment, lifecycle stage) that might explain why certain products are harder to forecast than others.
+
+\textbf{Cost parameter assumptions.} The economic impact analysis relies on a 5\% daily holding cost rate provided by the supervisor. While this rate is consistent with the methodology used in prior work on the same dataset, it was not independently validated against the company's actual cost structure. The absolute cost figures should be interpreted with this caveat in mind, though the relative savings (27\%) are robust to reasonable variations in the holding cost rate.
+
+\textbf{Sales on closed days.} A small number of transactions (3,776 records across 69 closed days) were observed on days marked as closed in the calendar data. The origin of these transactions was not clarified during the project. While the volumes are small and do not materially affect the results, this data quality issue should be investigated before operational deployment.
+
+\section{Future Work}
+
+Several lines of work remain open for future exploration:
+
+\begin{itemize}
+    \item \textbf{Multi-step forecasting:} The current models predict one day ahead. Extending to multi-step forecasts (e.g., predicting the full protection period directly) could provide more actionable information for inventory planning.
+
+    \item \textbf{Probabilistic forecasting:} Rather than point forecasts, generating prediction intervals or full demand distributions would allow more sophisticated inventory optimisation, including direct integration with newsvendor-type models.
+
+    \item \textbf{External variables:} Incorporating additional data sources such as macroeconomic indicators, competitor pricing, or weather data could improve forecast accuracy, particularly for products with demand sensitive to external factors.
+
+    \item \textbf{Model deployment:} Developing an automated pipeline that retrains models periodically and generates daily forecasts for operational use would be the natural next step towards real-world adoption.
+
+    \item \textbf{Product segmentation:} Applying different forecasting strategies to different product segments (e.g., high-volume vs intermittent demand products) could yield further improvements, as the optimal approach may vary across the portfolio.
+\end{itemize}
