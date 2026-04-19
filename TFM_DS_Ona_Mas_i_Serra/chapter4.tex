@@ -3,13 +3,13 @@
 
 \section{Conclusions}
 
-This project set out to develop machine learning models for daily demand forecasting in the automotive sector and to evaluate their impact on safety stock costs. The results confirm that tree-based ensemble methods (Random Forest, XGBoost, and LightGBM) substantially outperform both the naive lag-7 baseline and classical time series approaches, reducing forecast error by approximately 28\% and translating into annual safety stock cost savings of approximately 27\%.
+This project set out to develop machine learning models for daily demand forecasting in the automotive sector and to evaluate their impact on safety stock costs. The results confirm that four ML approaches (Random Forest, XGBoost, LightGBM, and LSTM) substantially outperform both the naive lag-7 baseline and classical time series approaches, reducing forecast error by approximately 28\% and translating into annual safety stock cost savings of approximately 26--27\%.
 
-The three tree-based models achieved virtually identical performance (RMSE between 1.633 and 1.637 on the last validation fold), indicating that the choice among them is less important than the decision to adopt ML-based forecasting over the naive approach. ARIMA and LSTM also outperformed the baseline, though with a smaller margin, confirming that the engineered features (lag values, rolling statistics, and EWMA) capture demand patterns more effectively than raw time series modelling alone.
+The four top-performing models achieved virtually identical performance (RMSE between 1.634 and 1.643 on the last validation fold), indicating that the choice among them is less important than the decision to adopt ML-based forecasting over the naive approach. Notably, the LSTM deep learning model, when trained on all 861 products with early stopping, matched the tree-based models despite using a fundamentally different learning approach. ARIMA also outperformed the baseline, though with a smaller margin, confirming that the engineered features and global training strategy capture demand patterns more effectively than per-product time series modelling alone.
 
 The SHAP analysis revealed that the 28-day exponentially weighted moving average is the single most influential predictor, followed by day-of-week and rolling mean features. This finding validates the feature engineering strategy and provides interpretable guidance for practitioners: smoothed recent demand history is the strongest signal for short-term forecasting in this domain.
 
-The economic impact analysis, using real per-product cost parameters provided by the company (replenishment cycles, lead times, and unit prices), demonstrated that the ML models reduce total annual safety stock costs from approximately \euro11.4 million to \euro8.3 million, a saving of approximately \euro3.1 million per year. This result is robust across different service levels (90\%, 95\%, 99\%), with the relative advantage of ML models remaining consistent.
+The economic impact analysis, using real per-product cost parameters provided by the company (replenishment cycles, lead times, and unit prices), demonstrated that the ML models reduce total annual safety stock costs from approximately \euro11.4 million to \euro8.3--8.4 million, a saving of approximately \euro3.0 million per year. This result is robust across different service levels (90\%, 95\%, 99\%), with the relative advantage of ML models remaining consistent.
 
 \section{Achievement of Objectives}
 
@@ -26,7 +26,7 @@ The specific objectives defined in Chapter 1 were addressed as follows:
 
     \item \textit{Comparison against baseline:} All ML models were compared against the naive lag-7 baseline across four metrics (MAE, RMSE, MAPE, $\sigma_e$). The improvement was consistent and substantial. This objective was fully achieved.
 
-    \item \textit{Economic impact evaluation:} The safety stock cost analysis was conducted using real company data, demonstrating annual savings of approximately \euro3.1 million. This objective was fully achieved.
+    \item \textit{Economic impact evaluation:} The safety stock cost analysis was conducted using real company data, demonstrating annual savings of approximately \euro3.0 million. This objective was fully achieved.
 \end{enumerate}
 
 \section{Planning and Methodology}
@@ -47,11 +47,11 @@ No unforeseen ethical or sustainability impacts emerged during the project.
 
 This project reinforced several practical insights about applied data science:
 
-Feature engineering matters more than model selection. The three tree-based models achieved nearly identical results despite using fundamentally different learning strategies (bagging vs gradient boosting). The shared factor was the same set of engineered features, particularly the smoothed demand history (EWMA, rolling statistics) and lag values. Investing time in understanding the data and crafting meaningful features yielded more value than fine-tuning model architectures. For example, the 28-day EWMA alone accounted for a mean absolute SHAP value of 0.473, more than the next four features combined.
+Feature engineering matters more than model selection. The three tree-based models and LSTM achieved nearly identical results despite using fundamentally different learning strategies (bagging, gradient boosting, and recurrent neural networks). The shared factor was the same set of engineered features, particularly the smoothed demand history (EWMA, rolling statistics) and lag values. Investing time in understanding the data and crafting meaningful features yielded more value than fine-tuning model architectures. For example, the 28-day EWMA alone accounted for a mean absolute SHAP value of 0.473, more than the next four features combined.
 
 Data quality issues require domain knowledge. Identifying stock breaks (zero sales with zero stock) as supply-side constraints rather than genuine zero demand required understanding the business context. Approximately 2\% of observations fell into this category. Without the imputation strategy informed by the supervisor's domain expertise, these observations would have biased the models towards underforecasting for affected products.
 
-Simple baselines are surprisingly strong. The naive lag-7 baseline, which simply repeats last week's sales, already captures the dominant weekly pattern in the data. The ML models improved on it by 28\%, but this required substantial effort in feature engineering, hyperparameter tuning, and validation design. In practice, the marginal value of ML over a well-chosen baseline should always be weighed against the implementation complexity.
+Simple baselines are surprisingly strong. The naive lag-7 baseline, which simply repeats last week's sales, already captures the dominant weekly pattern in the data. The ML models improved on it by 28\%, but this required substantial effort in feature engineering, hyperparameter tuning, early stopping configuration, and validation design. In practice, the marginal value of ML over a well-chosen baseline should always be weighed against the implementation complexity.
 
 Validation design is critical for time series. Using rolling forecast origin validation instead of standard cross-validation was essential to avoid data leakage and produce realistic performance estimates. Early experiments with random train/test splits produced artificially low error rates that did not reflect real forecasting conditions. The rolling strategy, while more computationally expensive (requiring three full training cycles), provided confidence that the reported accuracy is achievable in production.
 
@@ -71,7 +71,7 @@ Several limitations of this work should be acknowledged:
 
 \textbf{Anonymised product identifiers.} Because all product references are anonymised, it was not possible to investigate product-specific characteristics (e.g., product category, price segment, lifecycle stage) that might explain why certain products are harder to forecast than others.
 
-\textbf{Cost parameter assumptions.} The economic impact analysis relies on a 5\% daily holding cost rate provided by the supervisor. While this rate is consistent with the methodology used in prior work on the same dataset, it was not independently validated against the company's actual cost structure. The absolute cost figures should be interpreted with this caveat in mind, though the relative savings (27\%) are robust to reasonable variations in the holding cost rate.
+\textbf{Cost parameter assumptions.} The economic impact analysis relies on a 5\% daily holding cost rate provided by the supervisor. While this rate is consistent with the methodology used in prior work on the same dataset, it was not independently validated against the company's actual cost structure. The absolute cost figures should be interpreted with this caveat in mind, though the relative savings (26--27\%) are robust to reasonable variations in the holding cost rate.
 
 \textbf{Sales on closed days.} A small number of transactions (3,776 records across 69 closed days) were observed on days marked as closed in the calendar data. The origin of these transactions was not clarified during the project. While the volumes are small and do not materially affect the results, this data quality issue should be investigated before operational deployment.
 
