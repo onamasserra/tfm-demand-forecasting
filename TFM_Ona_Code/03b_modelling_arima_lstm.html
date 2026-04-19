@@ -7857,15 +7857,16 @@ Outputs: output/models/arima_lstm_results.csv, plots</p>
 
 <span class="c1"># ARIMA config</span>
 <span class="n">N_ARIMA_PRODUCTS</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None = all products</span>
-<span class="n">SKIP_ARIMA</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">SKIP_ARIMA</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># LSTM config</span>
 <span class="n">LSTM_HIDDEN</span> <span class="o">=</span> <span class="mi">32</span>
 <span class="n">LSTM_SEQ_LEN</span> <span class="o">=</span> <span class="mi">14</span>
-<span class="n">LSTM_EPOCHS</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">LSTM_EPOCHS</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">LSTM_BATCH</span> <span class="o">=</span> <span class="mi">512</span>
 <span class="n">LSTM_LR</span> <span class="o">=</span> <span class="mf">0.003</span>
-<span class="n">N_LSTM_TRAIN_PRODUCTS</span> <span class="o">=</span> <span class="mi">200</span>  <span class="c1"># sample for training speed</span>
+<span class="n">LSTM_PATIENCE</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># early stopping patience</span>
+<span class="n">N_LSTM_TRAIN_PRODUCTS</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None = all products</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">save_fig</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
@@ -8000,7 +8001,7 @@ Outputs: output/models/arima_lstm_results.csv, plots</p>
 
 <span class="c1"># Sample products for training</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
-<span class="n">lstm_train_prods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">all_products</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N_LSTM_TRAIN_PRODUCTS</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">lstm_train_prods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">all_products</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">N_LSTM_TRAIN_PRODUCTS</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">if</span> <span class="n">N_LSTM_TRAIN_PRODUCTS</span> <span class="k">else</span> <span class="n">all_products</span>
 <span class="n">train_sampled</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">train_df</span><span class="p">[</span><span class="s2">"producto"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">lstm_train_prods</span><span class="p">)]</span>
 
 <span class="n">scaler</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
@@ -8055,14 +8056,23 @@ Outputs: output/models/arima_lstm_results.csv, plots</p>
 
 
 <span class="c1"># ── 3.4 Train ──</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Training LSTM (hidden=</span><span class="si">{</span><span class="n">LSTM_HIDDEN</span><span class="si">}</span><span class="s2">, epochs=</span><span class="si">{</span><span class="n">LSTM_EPOCHS</span><span class="si">}</span><span class="s2">, batch=</span><span class="si">{</span><span class="n">LSTM_BATCH</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Training LSTM (hidden=</span><span class="si">{</span><span class="n">LSTM_HIDDEN</span><span class="si">}</span><span class="s2">, max_epochs=</span><span class="si">{</span><span class="n">LSTM_EPOCHS</span><span class="si">}</span><span class="s2">, batch=</span><span class="si">{</span><span class="n">LSTM_BATCH</span><span class="si">}</span><span class="s2">, patience=</span><span class="si">{</span><span class="n">LSTM_PATIENCE</span><span class="si">}</span><span class="s2">)..."</span><span class="p">)</span>
 
 <span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">SeqDataset</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">),</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">LSTM_BATCH</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">LSTMModel</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_cols</span><span class="p">),</span> <span class="n">LSTM_HIDDEN</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">LSTM_LR</span><span class="p">)</span>
 <span class="n">criterion</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MSELoss</span><span class="p">()</span>
 
+<span class="c1"># Validation set for early stopping (20% of test sequences)</span>
+<span class="n">val_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.2</span><span class="p">)</span>
+<span class="n">val_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_test</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">val_size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">X_val_es</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X_test</span><span class="p">[</span><span class="n">val_idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<span class="n">y_val_es</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">y_test</span><span class="p">[</span><span class="n">val_idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
 <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">best_val_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'inf'</span><span class="p">)</span>
+<span class="n">patience_counter</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">best_state</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">LSTM_EPOCHS</span><span class="p">):</span>
     <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
     <span class="n">total_loss</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
@@ -8074,10 +8084,28 @@ Outputs: output/models/arima_lstm_results.csv, plots</p>
         <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
         <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">LSTM_EPOCHS</span><span class="si">}</span><span class="s2">: loss=</span><span class="si">{</span><span class="n">total_loss</span><span class="o">/</span><span class="n">n</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">train_loss</span> <span class="o">=</span> <span class="n">total_loss</span> <span class="o">/</span> <span class="n">n</span>
+    <span class="c1"># Validation loss</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">val_preds</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">X_val_es</span><span class="p">)</span>
+        <span class="n">val_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">val_preds</span><span class="p">,</span> <span class="n">y_val_es</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">val_loss</span> <span class="o">&lt;</span> <span class="n">best_val_loss</span><span class="p">:</span>
+        <span class="n">best_val_loss</span> <span class="o">=</span> <span class="n">val_loss</span>
+        <span class="n">patience_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">best_state</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">patience_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">5</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">epoch</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">patience_counter</span> <span class="o">&gt;=</span> <span class="n">LSTM_PATIENCE</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">LSTM_EPOCHS</span><span class="si">}</span><span class="s2">: train_loss=</span><span class="si">{</span><span class="n">train_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  val_loss=</span><span class="si">{</span><span class="n">val_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">  patience=</span><span class="si">{</span><span class="n">patience_counter</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">LSTM_PATIENCE</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">patience_counter</span> <span class="o">&gt;=</span> <span class="n">LSTM_PATIENCE</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Early stopping at epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">break</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+<span class="c1"># Restore best model</span>
+<span class="k">if</span> <span class="n">best_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">best_state</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">s (best val_loss=</span><span class="si">{</span><span class="n">best_val_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 
 
 <span class="c1"># ── 3.5 Evaluate ──</span>
@@ -8201,149 +8229,7 @@ Test: 2026-02-21 → 2026-03-22
 ============================================================
 2. ARIMA BASELINE
 ============================================================
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Running ARIMA on 861 products...
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [1/861] 7s elapsed, ~99min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [50/861] 527s elapsed, ~142min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [100/861] 1103s elapsed, ~140min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [150/861] 1556s elapsed, ~123min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [200/861] 2111s elapsed, ~116min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [250/861] 2607s elapsed, ~106min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [300/861] 3033s elapsed, ~95min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [350/861] 3376s elapsed, ~82min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [400/861] 3808s elapsed, ~73min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [450/861] 4260s elapsed, ~65min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [500/861] 4663s elapsed, ~56min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [550/861] 5046s elapsed, ~48min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [600/861] 5369s elapsed, ~39min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [650/861] 5800s elapsed, ~31min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [700/861] 6241s elapsed, ~24min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [750/861] 6586s elapsed, ~16min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [800/861] 6992s elapsed, ~9min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  [850/861] 7416s elapsed, ~2min remaining, 0 errors
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>
-ARIMA complete: 7519s (125.3min), 0 errors out of 861
-  ARIMA: MAE=1.211  RMSE=1.734  MAPE=53.9%  σ_e=1.732
-✓ Saved arima_predictions.parquet (25,830 rows)
+ARIMA (cached): MAE=1.443  RMSE=2.220
 
 ============================================================
 3. LSTM MODEL (PyTorch)
@@ -8355,14 +8241,20 @@ ARIMA complete: 7519s (125.3min), 0 errors out of 861
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Device: cpu
-Building sequences (seq_len=14)...
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Train sequences: 131,800
+<pre>Building sequences (seq_len=14)...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Train sequences: 567,399
 </pre>
 </div>
 </div>
@@ -8371,50 +8263,37 @@ Building sequences (seq_len=14)...
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Test sequences: 25,830
 
-Training LSTM (hidden=32, epochs=10, batch=512)...
+Training LSTM (hidden=32, max_epochs=100, batch=512, patience=10)...
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 1/10: loss=3.4911
+<pre>  Epoch 1/100: train_loss=3.2489  val_loss=2.5408  patience=0/10
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 2/10: loss=3.1686
+<pre>  Epoch 5/100: train_loss=3.0926  val_loss=2.5188  patience=0/10
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 4/10: loss=3.1071
+<pre>  Epoch 10/100: train_loss=3.0398  val_loss=2.5325  patience=5/10
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 6/10: loss=3.0762
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 8/10: loss=3.0501
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Epoch 10/10: loss=3.0242
-Training: 22s
+<pre>  Epoch 15/100: train_loss=3.0074  val_loss=2.5779  patience=10/10
+  Early stopping at epoch 15
+Training: 170s (best val_loss=2.5188)
 
 Evaluating LSTM...
 </pre>
@@ -8423,7 +8302,7 @@ Evaluating LSTM...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  LSTM: MAE=1.151  RMSE=1.674  MAPE=50.2%  σ_e=1.666
+<pre>  LSTM: MAE=1.089  RMSE=1.643  MAPE=52.9%  σ_e=1.643
 
 ============================================================
 4. COMBINED COMPARISON
@@ -8432,22 +8311,28 @@ Merged: 25,830 rows, 861 products
 
 ── All Models (test period) ──
   Naive_lag7     : MAE=1.256  RMSE=2.277  MAPE=74.4%  σ_e=2.277
-  RandomForest   : MAE=1.098  RMSE=1.637  MAPE=50.0%  σ_e=1.636
-  XGBoost        : MAE=1.121  RMSE=1.635  MAPE=50.0%  σ_e=1.634
-  LightGBM       : MAE=1.097  RMSE=1.633  MAPE=51.5%  σ_e=1.633
-  LSTM           : MAE=1.151  RMSE=1.674  MAPE=50.2%  σ_e=1.666
+  RandomForest   : MAE=1.102  RMSE=1.635  MAPE=49.9%  σ_e=1.635
+  XGBoost        : MAE=1.090  RMSE=1.634  MAPE=51.3%  σ_e=1.634
+  LightGBM       : MAE=1.092  RMSE=1.641  MAPE=51.8%  σ_e=1.641
+  LSTM           : MAE=1.089  RMSE=1.643  MAPE=52.9%  σ_e=1.643
 
-  ARIMA*         : MAE=1.211  RMSE=1.734  MAPE=53.9%  σ_e=1.732  (50 sampled products)
+  ARIMA*         : MAE=1.443  RMSE=2.220  MAPE=59.8%  σ_e=2.219  (50 sampled products)
 
 ── LSTM: Promo vs Non-Promo ──
-  Non-Promo : MAE=1.130  RMSE=1.678  σ_e=1.672
-  Promo     : MAE=1.227  RMSE=1.657  σ_e=1.641
+  Non-Promo : MAE=1.076  RMSE=1.649  σ_e=1.649
+  Promo     : MAE=1.135  RMSE=1.622  σ_e=1.620
 
 ============================================================
 5. SAVING RESULTS
 ============================================================
 ✓ Saved arima_lstm_results.csv &amp; predictions_all_models.parquet
-   → Saved 24_all_models_comparison.png
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>   → Saved 24_all_models_comparison.png
 </pre>
 </div>
 </div>

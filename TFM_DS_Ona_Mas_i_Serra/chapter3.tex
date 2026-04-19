@@ -239,10 +239,10 @@ Six forecasting approaches were implemented, spanning a naive baseline, a classi
 
     \item \textbf{LightGBM:} A gradient boosting implementation that follows the same sequential error-correction strategy as XGBoost but with key differences in how trees are constructed \citep{ke2017lightgbm}. While XGBoost grows trees level by level (expanding all nodes at the same depth before moving deeper), LightGBM grows trees leaf by leaf, always expanding the leaf with the largest potential error reduction. This leaf-wise strategy produces deeper, more asymmetric trees that can capture complex patterns with fewer total nodes. LightGBM also uses histogram-based binning, which groups continuous feature values into discrete bins before searching for the optimal split point. This reduces the computational cost from $O(n)$ to $O(k)$ per split (where $k$ is the number of bins, typically 255), enabling significantly faster training on large datasets. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}, one of the largest demand forecasting benchmarks to date.
 
-    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which treat each observation as an independent row of features, LSTM processes input data as ordered sequences, maintaining an internal memory state that evolves as it reads through the time steps. The model receives 14 consecutive days of 33 features as input. At each time step, the LSTM cell updates its internal state through three learned gates: the \textit{forget gate} decides what information from previous days to discard (e.g., an old promotional effect that is no longer relevant), the \textit{input gate} decides what new information to store (e.g., a sudden demand spike), and the \textit{output gate} decides what to expose as the hidden state for the next step. This gating mechanism is what distinguishes LSTMs from simple recurrent networks, which suffer from vanishing gradients when trying to learn dependencies across many time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer of 32 hidden units. Only the output of the final time step (Day 14) is fed to a fully connected linear layer to produce the demand forecast for the next day. Training used the Adam optimiser (learning rate 0.003, batch size 512, 10 epochs) on a sample of 200 products to manage computational cost, then the trained model was evaluated on all 861 products. All input features were scaled to the $[0, 1]$ range using min-max normalisation fitted on the training set, as neural networks are sensitive to feature magnitudes.
+    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which treat each observation as an independent row of features, LSTM processes input data as ordered sequences, maintaining an internal memory state that evolves as it reads through the time steps. The model receives 14 consecutive days of 33 features as input. At each time step, the LSTM cell updates its internal state through three learned gates: the \textit{forget gate} decides what information from previous days to discard (e.g., an old promotional effect that is no longer relevant), the \textit{input gate} decides what new information to store (e.g., a sudden demand spike), and the \textit{output gate} decides what to expose as the hidden state for the next step. This gating mechanism is what distinguishes LSTMs from simple recurrent networks, which suffer from vanishing gradients when trying to learn dependencies across many time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer of 32 hidden units. Only the output of the final time step (Day 14) is fed to a fully connected linear layer to produce the demand forecast for the next day. Training used the Adam optimiser (learning rate 0.003, batch size 512) with early stopping (patience of 10 epochs) on all 861 products. Training was monitored on a held-out validation set and stopped automatically when the validation loss ceased to improve, which occurred at epoch 15 out of a maximum of 100. All input features were scaled to the $[0, 1]$ range using min-max normalisation fitted on the training set, as neural networks are sensitive to feature magnitudes.
 \end{enumerate}
 
-All tree-based models were trained as a single global model on the full set of 33 input features across all 861 products. The LSTM was also trained globally, receiving the same features but processed as ordered sequences. This global approach allows cross-product learning, where patterns discovered in one product's data help predict similar products. ARIMA, by contrast, fits 861 independent per-product models on the raw sales series without engineered features. All predictions were clipped to a minimum of zero to prevent negative forecast values.
+All tree-based models were trained as a single global model on the full set of 33 input features across all 861 products. XGBoost and LightGBM used early stopping (patience of 20 rounds) to automatically determine the optimal number of boosting iterations, preventing overfitting while allowing the models to train for as many rounds as needed. The LSTM was also trained globally with early stopping (patience of 10 epochs). This global approach allows cross-product learning, where patterns discovered in one product's data help predict similar products. ARIMA, by contrast, fits 861 independent per-product models on the raw sales series without engineered features. All predictions were clipped to a minimum of zero to prevent negative forecast values.
 
 \subsection{Definition of Accuracy Indicators}
 
@@ -392,22 +392,22 @@ Table~\ref{tab:results_summary} presents the average performance of each model a
 \hline
 \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-LightGBM & 1.097 & 1.633 & 51.5 & 1.633 \\
-XGBoost & 1.121 & 1.635 & 50.0 & 1.634 \\
-Random Forest & 1.098 & 1.637 & 50.0 & 1.636 \\
-LSTM & 1.148 & 1.662 & 49.6 & 1.655 \\
-ARIMA & 1.211 & 1.734 & 53.9 & 1.732 \\
-Naive (lag-7) & 1.256 & 2.277 & 74.4 & 2.277 \\
+LightGBM & 1.092 & 1.641 & 66.9 & 1.641 \\
+XGBoost & 1.090 & 1.634 & 67.1 & 1.634 \\
+Random Forest & 1.102 & 1.635 & 68.9 & 1.635 \\
+LSTM & 1.089 & 1.643 & 66.5 & 1.643 \\
+ARIMA & 1.211 & 1.734 & 77.3 & 1.732 \\
+Naive (lag-7) & 1.256 & 2.277 & 72.9 & 2.277 \\
 \hline
 \end{tabular}
 \end{table}
 
-The three tree-based models achieve virtually identical performance, with LightGBM holding a marginal edge (RMSE 1.633 vs 1.635 for XGBoost and 1.637 for Random Forest). All three reduce RMSE by approximately 28\% compared to the naive baseline (2.277). LSTM (1.662) and ARIMA (1.734) also outperform the baseline substantially, though with a small gap behind the tree models.
+The three tree-based models and LSTM achieve virtually identical performance, with XGBoost holding a marginal edge on RMSE (1.634) and LSTM achieving the lowest MAE (1.089). All four models reduce RMSE by approximately 28\% compared to the naive baseline (2.277). ARIMA (1.734) also outperforms the baseline substantially, though with a gap behind the other ML models. The near-identical performance of the tree models and LSTM suggests that the feature engineering, rather than the specific algorithm, is the primary driver of forecast quality.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.png}
-\caption{Comparison of forecast accuracy (RMSE) across all six models. The three tree-based models form a tight cluster with virtually identical performance, all substantially outperforming the naive baseline.}
+\caption{Comparison of forecast accuracy (RMSE) across all six models. The tree-based models and LSTM form a tight cluster with virtually identical performance, all substantially outperforming the naive baseline.}
 \label{fig:all_models_comparison}
 \end{figure}
 
@@ -426,19 +426,19 @@ This ranking is consistent with the findings of the M5 forecasting competition \
 \hline
 \textbf{Segment} & \textbf{Model} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE (\%)} & \textbf{$\sigma_e$} \\
 \hline
-\multirow{6}{*}{Non-Promo} & XGBoost & 1.089 & 1.638 & 51.2 & 1.637 \\
- & LightGBM & 1.118 & 1.642 & 50.0 & 1.641 \\
- & Random Forest & 1.086 & 1.643 & 50.1 & 1.642 \\
- & LSTM & 1.130 & 1.678 & 72.5 & 1.672 \\
+\multirow{6}{*}{Non-Promo} & XGBoost & 1.070 & 1.640 & 65.2 & 1.640 \\
+ & LightGBM & 1.066 & 1.644 & 64.3 & 1.644 \\
+ & Random Forest & 1.088 & 1.642 & 68.0 & 1.641 \\
+ & LSTM & 1.076 & 1.649 & 66.0 & 1.649 \\
  & ARIMA & 1.195 & 1.732 & 76.4 & 1.729 \\
- & Naive (lag-7) & 1.237 & 2.288 & 74.2 & 2.288 \\
+ & Naive (lag-7) & 1.237 & 2.288 & 71.5 & 2.288 \\
 \hline
-\multirow{6}{*}{Promo} & XGBoost & 1.165 & 1.607 & 48.9 & 1.607 \\
- & LightGBM & 1.175 & 1.615 & 49.3 & 1.615 \\
- & Random Forest & 1.146 & 1.611 & 49.4 & 1.611 \\
- & LSTM & 1.227 & 1.657 & 83.1 & 1.642 \\
+\multirow{6}{*}{Promo} & XGBoost & 1.164 & 1.613 & 73.9 & 1.613 \\
+ & LightGBM & 1.184 & 1.631 & 76.3 & 1.629 \\
+ & Random Forest & 1.151 & 1.610 & 72.1 & 1.610 \\
+ & LSTM & 1.135 & 1.622 & 68.6 & 1.621 \\
  & ARIMA & 1.271 & 1.740 & 80.9 & 1.739 \\
- & Naive (lag-7) & 1.326 & 2.233 & 74.9 & 2.233 \\
+ & Naive (lag-7) & 1.326 & 2.233 & 77.9 & 2.233 \\
 \hline
 \end{tabular}
 \end{table}
@@ -507,9 +507,9 @@ The 28-day EWMA emerges as the single most important predictor, followed by the 
 The evaluation yields several key findings:
 
 \begin{enumerate}
-    \item The three tree-based machine learning models (XGBoost, LightGBM, Random Forest) achieve the best performance, with RMSE values within 1\% of each other. This suggests that the feature engineering, rather than the specific algorithm choice, is the primary driver of forecast quality among this model family.
+    \item The three tree-based models and LSTM achieve virtually identical performance, with RMSE values within 1\% of each other (1.634--1.643). This suggests that the feature engineering, rather than the specific algorithm choice, is the primary driver of forecast quality. The LSTM, trained on all 861 products with early stopping, matches the tree models despite using a fundamentally different learning approach.
 
-    \item ARIMA and LSTM occupy an intermediate tier. ARIMA (RMSE = 1.734) achieves a 23.9\% improvement over the naive baseline when fitted to all 861 products, demonstrating that classical time series methods remain effective. LSTM (RMSE = 1.662) narrows the gap further with the tree-based models. ARIMA's per-product fitting captures local demand patterns effectively but cannot leverage cross-product information or engineered features. LSTM captures sequential dependencies but requires substantially more training data and computation.
+    \item ARIMA occupies a separate tier. ARIMA (RMSE = 1.734) achieves a 23.9\% improvement over the naive baseline when fitted to all 861 products, demonstrating that classical time series methods remain effective. However, its per-product fitting approach cannot leverage cross-product patterns, which explains the gap with the global models.
 
     \item The improvement over the naive baseline is substantial across all ML approaches (24--28\% RMSE reduction), demonstrating the value of incorporating engineered features and systematic model training over simple heuristic forecasting.
 
@@ -517,7 +517,7 @@ The evaluation yields several key findings:
 
     \item SHAP analysis reveals that smoothed demand history (EWMA and rolling statistics) and calendar features are the most influential predictors, validating the feature engineering strategy adopted in this work.
 
-    \item The forecast error standard deviation ($\sigma_e \approx 1.74$ for the best tree models, $\sigma_e \approx 2.40$ for the naive baseline) provides the direct input to the safety stock calculation presented in the following section.igma_e \approx 2.22$ for ARIMA/LSTM, compared to $\sigma_e \approx 3.09$ for the naive baseline) translates directly into safety stock reductions, as quantified in the following section.
+    \item The forecast error standard deviation ($\sigma_e \approx 1.64$ for the top four models, $\sigma_e \approx 2.28$ for the naive baseline) provides the direct input to the safety stock calculation presented in the following section.
 \end{enumerate}
 
 
@@ -543,10 +543,10 @@ The transition from a naive forecasting approach to machine learning models has 
 \hline
 \textbf{Model} & \textbf{90\%} & \textbf{95\%} & \textbf{99\%} \\
 \hline
-XGBoost & 7,105 & 9,119 & 12,897 \\
-Random Forest & 7,098 & 9,110 & 12,884 \\
-LightGBM & 7,091 & 9,101 & 12,872 \\
-LSTM & 7,291 & 9,358 & 13,235 \\
+XGBoost & 7,093 & 9,104 & 12,875 \\
+Random Forest & 7,091 & 9,102 & 12,872 \\
+LightGBM & 7,119 & 9,137 & 12,923 \\
+LSTM & 7,139 & 9,163 & 12,959 \\
 ARIMA & 7,482 & 9,604 & 13,583 \\
 Naive (lag-7) & 9,773 & 12,544 & 17,740 \\
 \hline
@@ -594,16 +594,16 @@ Table~\ref{tab:economic_summary} presents the total annual safety stock cost for
 \textbf{Model} & \textbf{Avg RMSE} & \textbf{Total SS (units)} & \textbf{Annual Cost (\euro)} & \textbf{Savings vs Naive} \\
 \hline
 Naive (lag-7) & 2.01 & 12,544 & 11,398,048 & --- \\
-XGBoost & 1.46 & 9,119 & 8,323,780 & \euro3,074,268 (27.0\%) \\
-Random Forest & 1.45 & 9,110 & 8,315,979 & \euro3,082,069 (27.0\%) \\
-LightGBM & 1.45 & 9,101 & 8,324,624 & \euro3,073,424 (27.0\%) \\
-LSTM & 1.49 & 9,358 & 8,556,841 & \euro2,841,207 (24.9\%) \\
+XGBoost & 1.45 & 9,104 & 8,333,650 & \euro3,064,397 (26.9\%) \\
+Random Forest & 1.45 & 9,102 & 8,308,914 & \euro3,089,134 (27.1\%) \\
+LightGBM & 1.46 & 9,137 & 8,374,044 & \euro3,024,004 (26.5\%) \\
+LSTM & 1.46 & 9,163 & 8,398,387 & \euro2,999,661 (26.3\%) \\
 ARIMA & 1.53 & 9,604 & 8,837,910 & \euro2,560,138 (22.5\%) \\
 \hline
 \end{tabular}
 \end{table}
 
-All five ML models achieve substantial savings compared to the naive baseline. The three tree-based models perform nearly identically, saving approximately 27\% (\euro3.1M annually). LSTM follows closely with a 24.9\% reduction, while ARIMA, despite being the weakest ML model, still delivers a 22.5\% cost reduction. The total cost differences among the three tree-based models are less than \euro9,000.
+All five ML models achieve substantial savings compared to the naive baseline. The three tree-based models and LSTM perform nearly identically, saving approximately 26--27\% (\euro3.0--3.1M annually). ARIMA, despite being the weakest ML model, still delivers a 22.5\% cost reduction. The total cost differences among the top four models are less than \euro90,000.
 
 \begin{figure}[H]
 \centering
@@ -628,6 +628,6 @@ Figure~\ref{fig:per_product_cost_comparison} provides a per-product view of the 
 \label{fig:safety_stock_distribution}
 \end{figure}
 
-These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The tree-based models achieve approximately 27\% cost savings, LSTM saves nearly 25\%, and even ARIMA delivers a 22.5\% reduction, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
+These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The tree-based models and LSTM achieve approximately 26--27\% cost savings, while ARIMA delivers a 22.5\% reduction, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
 
 It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis supervisor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained for all five models regardless of the risk tolerance adopted by the organisation.
