@@ -46,6 +46,7 @@ All four sheets were loaded into memory using the \texttt{pandas} library with t
 After merging, the resulting dataset contained 629,391 rows and served as the foundation for all subsequent analysis. The merged dataset was persisted in Apache Parquet format for efficient reloading in downstream scripts.
 
 
+\clearpage
 \section{Data Exploration}
 
 \subsection{Data Summary}
@@ -146,6 +147,7 @@ The data quality assessment identified the following issues:
 \textbf{Outliers.} Outlier detection was performed using a 3$\sigma$ threshold per product per month. This identified approximately 8,895 observations (1.41\% of the dataset) as outliers, which were capped at the upper threshold value. The per-product-per-month approach was preferred over a global threshold to account for the varying demand scales and seasonal patterns across products.
 
 
+\clearpage
 \section{Data Preparation}
 
 \subsection{Data Cleaning}
@@ -172,6 +174,7 @@ Feature scaling (standardisation or normalisation) was not applied for the tree-
 
 For the LSTM model, min-max normalisation was applied to all input features to facilitate gradient-based optimisation. Each feature was scaled to the $[0, 1]$ range using the training set statistics, and the same transformation was applied to the validation and test sets to prevent information leakage. Predictions were inverse-transformed back to the original scale before computing evaluation metrics.
 
+\clearpage
 \section{Feature Engineering}
 
 Feature engineering is a central component of this work. A comprehensive set of 36 engineered features was designed to capture temporal dependencies, demand dynamics, and promotional effects. The features are organised into five categories, summarised in Table~\ref{tab:features}.
@@ -218,6 +221,7 @@ All lag and rolling features were computed strictly using past data to prevent i
 \end{figure}
 
 
+\clearpage
 \section{Modelling}
 
 \subsection{Model Selection}
@@ -227,18 +231,18 @@ Six forecasting approaches were implemented, spanning a naive baseline, a classi
 \begin{enumerate}
     \item \textbf{Naive baseline (lag-7):} The simplest possible forecast, predicting that demand on any given day equals the demand observed on the same weekday of the previous week. This baseline exploits the strong weekly autocorrelation identified during exploration and provides a meaningful benchmark against which machine learning models must demonstrate improvement.
 
-    \item \textbf{ARIMA (Seasonal):} A classical time series approach fitted per product using the \texttt{auto\_arima} implementation from the \texttt{pmdarima} library \citep{smith2017pmdarima}. Each product's demand series was modelled with seasonal ARIMA (SARIMA) with weekly periodicity ($m=7$), automatically selecting the optimal $(p,d,q)(P,D,Q)_7$ orders via stepwise search. ARIMA serves as the classical statistical baseline, representing the best that traditional time series methods can achieve without engineered features.
+    \item \textbf{ARIMA (Seasonal):} A classical time series approach fitted independently per product using the \texttt{auto\_arima} implementation from the \texttt{pmdarima} library \citep{smith2017pmdarima}. Each product's demand series was modelled with seasonal ARIMA (SARIMA) with weekly periodicity ($m=7$), automatically selecting the optimal $(p,d,q)(P,D,Q)_7$ orders via stepwise search. The ``integrated'' component (the $d$ parameter) handles non-stationarity by differencing the series, transforming raw demand values into changes between consecutive observations. This makes the statistical properties stable over time, which is a requirement for the autoregressive and moving average components to work correctly. Unlike the other models, ARIMA operates on the raw sales series without engineered features and fits 861 separate models (one per product). This per-product approach captures local demand patterns effectively but cannot leverage cross-product learning, as each model only sees its own product's history.
 
-    \item \textbf{Random Forest:} An ensemble of decision trees trained on bootstrap samples with random feature subsets \citep{pedregosa2011sklearn}. Random Forest provides robust predictions with built-in protection against overfitting through bagging and feature randomisation.
+    \item \textbf{Random Forest:} An ensemble method that combines hundreds of independent decision trees to produce a single prediction \citep{pedregosa2011sklearn}. Each individual decision tree works by recursively partitioning the feature space through a series of binary splits. At each internal node, the tree selects the feature and threshold that best separates the data (e.g., ``is the 28-day EWMA greater than 2.5 units?''), directing observations left or right until they reach a leaf node containing the predicted value. A single tree is prone to overfitting, memorising noise in the training data rather than learning generalisable patterns. Random Forest addresses this by training each tree on a different random bootstrap sample of the data and considering only a random subset of features at each split. The final prediction is the average of all individual tree predictions. Because each tree sees different data and features, their individual errors tend to be uncorrelated and cancel out when averaged, producing a more stable and accurate ensemble prediction.
 
-    \item \textbf{XGBoost:} A gradient boosting framework that builds trees sequentially, with each tree correcting the errors of its predecessors \citep{chen2016xgboost}. XGBoost incorporates L1 and L2 regularisation, column subsampling, and efficient handling of sparse data, making it well-suited to the high proportion of zero-demand observations in this dataset.
+    \item \textbf{XGBoost:} A gradient boosting framework that builds decision trees sequentially rather than in parallel \citep{chen2016xgboost}. The key idea is that each new tree is trained not on the original target variable, but on the residual errors of the previous trees. The first tree makes a rough prediction, the second tree learns to predict where the first tree went wrong, the third tree corrects the remaining errors, and so on. The final prediction is the weighted sum of all trees' contributions. This sequential error-correction approach allows gradient boosting to achieve high accuracy with relatively shallow trees (typically 4--8 levels deep), as each tree only needs to capture a small improvement. XGBoost incorporates L1 and L2 regularisation to prevent overfitting, column subsampling (using a random subset of features per tree, similar to Random Forest), and efficient handling of sparse data through a default direction for missing values at each split. This last property makes it well-suited to the high proportion of zero-demand observations in this dataset.
 
-    \item \textbf{LightGBM:} A gradient boosting implementation that uses histogram-based splitting and leaf-wise tree growth, offering faster training times than XGBoost while maintaining competitive accuracy \citep{ke2017lightgbm}. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}.
+    \item \textbf{LightGBM:} A gradient boosting implementation that follows the same sequential error-correction strategy as XGBoost but with key differences in how trees are constructed \citep{ke2017lightgbm}. While XGBoost grows trees level by level (expanding all nodes at the same depth before moving deeper), LightGBM grows trees leaf by leaf, always expanding the leaf with the largest potential error reduction. This leaf-wise strategy produces deeper, more asymmetric trees that can capture complex patterns with fewer total nodes. LightGBM also uses histogram-based binning, which groups continuous feature values into discrete bins before searching for the optimal split point. This reduces the computational cost from $O(n)$ to $O(k)$ per split (where $k$ is the number of bins, typically 255), enabling significantly faster training on large datasets. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}, one of the largest demand forecasting benchmarks to date.
 
-    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture long-range temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which rely on engineered lag features, LSTM processes input data as ordered sequences, with its internal gating mechanism allowing it to selectively retain or discard information from previous time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer (32 hidden units), trained on standardised features using 14-day input sequences.
+    \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which treat each observation as an independent row of features, LSTM processes input data as ordered sequences, maintaining an internal memory state that evolves as it reads through the time steps. The model receives 14 consecutive days of 33 features as input. At each time step, the LSTM cell updates its internal state through three learned gates: the \textit{forget gate} decides what information from previous days to discard (e.g., an old promotional effect that is no longer relevant), the \textit{input gate} decides what new information to store (e.g., a sudden demand spike), and the \textit{output gate} decides what to expose as the hidden state for the next step. This gating mechanism is what distinguishes LSTMs from simple recurrent networks, which suffer from vanishing gradients when trying to learn dependencies across many time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer of 32 hidden units. Only the output of the final time step (Day 14) is fed to a fully connected linear layer to produce the demand forecast for the next day. Training used the Adam optimiser (learning rate 0.003, batch size 512, 10 epochs) on a sample of 200 products to manage computational cost, then the trained model was evaluated on all 861 products. All input features were scaled to the $[0, 1]$ range using min-max normalisation fitted on the training set, as neural networks are sensitive to feature magnitudes.
 \end{enumerate}
 
-All tree-based models were trained on the full set of 33 input features (the 36 engineered features minus the 3 product-level statistics used only for reference). ARIMA was fitted per product on the raw sales series without engineered features, as is standard for classical time series methods. The LSTM model received the same 33 features as the tree models, but processed them as ordered sequences rather than independent observations. All predictions were clipped to a minimum of zero to prevent negative forecast values.
+All tree-based models were trained as a single global model on the full set of 33 input features across all 861 products. The LSTM was also trained globally, receiving the same features but processed as ordered sequences. This global approach allows cross-product learning, where patterns discovered in one product's data help predict similar products. ARIMA, by contrast, fits 861 independent per-product models on the raw sales series without engineered features. All predictions were clipped to a minimum of zero to prevent negative forecast values.
 
 \subsection{Definition of Accuracy Indicators}
 
@@ -272,6 +276,63 @@ Three validation folds were defined, each with a 30-day test window, working bac
 \hline
 \end{tabular}
 \end{table}
+
+Figure~\ref{fig:rolling_validation} illustrates this expanding window strategy visually.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    train/.style={fill=blue!20, draw=blue!50, minimum height=0.7cm},
+    test/.style={fill=blue!60, draw=blue!70, minimum height=0.7cm},
+    unused/.style={fill=gray!10, draw=gray!30, minimum height=0.7cm},
+    arrow/.style={->, >=stealth, thick},
+    note/.style={font=\footnotesize, text=gray!50!black}
+]
+
+% Timeline
+\def\totalwidth{12}
+\def\rowsep{1.3}
+
+% Date markers
+\node[note] at (0, 3*\rowsep + 0.8) {Apr 2024};
+\node[note] at (8.57, 3*\rowsep + 0.8) {Dec 2025};
+\node[note] at (\totalwidth, 3*\rowsep + 0.8) {Mar 2026};
+
+% Fold 1
+\node[note, left] at (-0.1, 2*\rowsep) {Fold 1};
+\node[train, minimum width=8.57cm, anchor=west] at (0, 2*\rowsep) {};
+\node[test, minimum width=1.14cm, anchor=west] at (8.57, 2*\rowsep) {};
+\node[unused, minimum width=2.29cm, anchor=west] at (9.71, 2*\rowsep) {};
+\node[note] at (4.28, 2*\rowsep) {Train (641 days)};
+\node[note, white] at (9.14, 2*\rowsep) {\scriptsize 30d};
+
+% Fold 2
+\node[note, left] at (-0.1, 1*\rowsep) {Fold 2};
+\node[train, minimum width=9.71cm, anchor=west] at (0, 1*\rowsep) {};
+\node[test, minimum width=1.14cm, anchor=west] at (9.71, 1*\rowsep) {};
+\node[unused, minimum width=1.15cm, anchor=west] at (10.85, 1*\rowsep) {};
+\node[note] at (4.85, 1*\rowsep) {Train (671 days)};
+\node[note, white] at (10.28, 1*\rowsep) {\scriptsize 30d};
+
+% Fold 3
+\node[note, left] at (-0.1, 0) {Fold 3};
+\node[train, minimum width=10.85cm, anchor=west] at (0, 0) {};
+\node[test, minimum width=1.15cm, anchor=west] at (10.85, 0) {};
+\node[note] at (5.42, 0) {Train (701 days)};
+\node[note, white] at (11.42, 0) {\scriptsize 30d};
+
+% Legend
+\node[train, minimum width=0.6cm] at (3, -1) {};
+\node[note, right] at (3.35, -1) {Training data};
+\node[test, minimum width=0.6cm] at (6.5, -1) {};
+\node[note, right] at (6.85, -1) {Validation (30 days)};
+\node[unused, minimum width=0.6cm] at (10, -1) {};
+\node[note, right] at (10.35, -1) {Not used};
+
+\end{tikzpicture}
+\caption{Rolling forecast origin validation strategy. The training window expands with each fold while the 30-day validation window slides forward in time. This ensures that models are never trained on future data.}
+\label{fig:rolling_validation}
+\end{figure}
 
 For each fold, the training set includes all data up to the fold's cutoff date (expanding window), and the model is evaluated on the subsequent 30-day period. Final reported metrics are averaged across all three folds.
 
@@ -315,6 +376,7 @@ Table~\ref{tab:tuned_params} presents the key tuned hyperparameters for each mod
 The relatively shallow tree depths (4--8) and moderate learning rates (0.030--0.032) selected by the optimiser suggest that the models benefit from regularisation, which is consistent with the high proportion of zero-demand observations in the dataset.
 
 
+\clearpage
 \section{Evaluation}
 
 \subsection{Accuracy Results Obtained}
@@ -459,6 +521,7 @@ The evaluation yields several key findings:
 \end{enumerate}
 
 
+\clearpage
 \section{Impact of Algorithm Improvement}
 
 \subsection{Impact on Processes}
