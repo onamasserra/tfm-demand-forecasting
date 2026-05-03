@@ -75,6 +75,20 @@ def apply_style():
     })
 
 
+def save_fig_dual(path_without_ext):
+    """Save current figure as both PNG (for GitHub/HTML) and PDF (for LaTeX).
+    
+    Args:
+        path_without_ext: Path object or string without file extension,
+                          e.g. OUTPUT_DIR / '01_sales_distribution'
+    """
+    from pathlib import Path
+    p = Path(path_without_ext)
+    plt.tight_layout()
+    plt.savefig(p.with_suffix(".png"), bbox_inches="tight", dpi=120)
+    plt.savefig(p.with_suffix(".pdf"), bbox_inches="tight")
+
+
 def get_model_color(name):
     """Return the consistent color for a model name."""
     return MODEL_COLORS.get(name, PRIMARY)
