@@ -1,36 +1,38 @@
-# TFM — Demand Forecasting for Safety Stock Optimisation
+# TFM — Demand Forecasting for Inventory Management Using Machine Learning
 
-Master's Thesis (TFM) for the MSc in Data Science at Universitat Oberta de Catalunya (UOC).
+Master's Final Project for the MSc in Data Science at Universitat Oberta de Catalunya (UOC).
+
+**Author:** Ona Mas i Serra  
+**Date:** May 2026
 
 ## Overview
 
-This project applies machine learning models to forecast daily product demand in a retail/distribution context, and translates those forecasts into safety stock optimisation and holding-cost analysis using a service-level-based safety stock methodology (SS = z × RMSE × √(T + L)).
+This project develops machine learning models for daily demand forecasting in the automotive sector and evaluates their impact on safety stock costs. The models achieve a 28% reduction in forecast error (RMSE) compared to a naive baseline, translating into annual safety stock cost savings of approximately €3.0 million (27%).
 
-## Repository Structure
+## Repository Contents
 
-- `TFM_Ona_Code/` — Jupyter notebook pipeline (EDA → Preprocessing → Modelling → Evaluation → Economic Impact)
-- `TFM_DS_Ona_Mas_i_Serra/` — LaTeX thesis source files
-- `Datos/` — Raw input data (Excel files)
-
-## Setup
-
-```bash
-git clone https://github.com/onamasserra/tfm-demand-forecasting.git
-cd tfm-demand-forecasting
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-Then open `TFM_Ona_Code/01_eda.ipynb` in VS Code or Jupyter and run notebooks in order (01 → 05).
-
-## Pipeline
+This public repository contains the Jupyter notebooks (source code) and their HTML exports for viewing without running the code:
 
 | Notebook | Description |
 |----------|-------------|
 | `01_eda.ipynb` | Exploratory data analysis |
 | `02_preprocessing.ipynb` | Data cleaning and feature engineering |
-| `03_modelling.ipynb` | Tree-based models (RF, XGBoost, LightGBM) with Optuna |
-| `03b_modelling_arima_lstm.ipynb` | ARIMA and LSTM baselines |
-| `04_evaluation.ipynb` | Model evaluation and SHAP interpretability |
+| `03_modelling.ipynb` | Tree-based models (RF, XGBoost, LightGBM) with Optuna tuning |
+| `03b_modelling_arima_lstm.ipynb` | ARIMA and LSTM models |
+| `04_evaluation.ipynb` | Model evaluation, cross-model SHAP analysis |
 | `05_economic_impact.ipynb` | Safety stock cost analysis and service-level optimisation |
+
+Each notebook is available in two formats:
+- `.ipynb` — Interactive Jupyter notebook (requires Python environment to run)
+- `.html` — Static rendered version (viewable in any browser)
+
+## Key Results
+
+- **Best models:** Random Forest, XGBoost, LightGBM, and LSTM achieve nearly identical performance (RMSE 1.634–1.643)
+- **Improvement over baseline:** ~28% RMSE reduction vs naive lag-7
+- **Economic impact:** ~€3.0M annual safety stock cost savings (26–27%)
+- **Most important feature:** 28-day EWMA (consistent across all model architectures)
+
+## Note
+
+The raw data files, LaTeX thesis source, and auxiliary files are not included in this public repository.
