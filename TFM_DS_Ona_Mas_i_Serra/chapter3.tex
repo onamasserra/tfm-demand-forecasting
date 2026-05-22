@@ -7,7 +7,7 @@ This chapter presents the complete design and implementation of the demand forec
 
 \subsection{Data Acquisition}
 
-The dataset used in this project was provided by the thesis supervisor and corresponds to real historical data from a company operating in the automotive sector. The data covers daily demand records for a portfolio of products, along with supplementary information on calendar events, promotional campaigns, and stock levels. The main data was received in a Microsoft Excel file (\texttt{Datos.xlsx}) containing four sheets, each representing a distinct dimension of the business context. Two additional files were provided for the economic impact analysis: \texttt{DatosCicloAprovisionamiento.xlsx} (replenishment cycle and lead time per product) and \texttt{DatosPrecioMedio.xlsx} (average unit price per product).
+The dataset used in this project was provided by the thesis tutor and corresponds to real historical data from a company operating in the automotive sector. The data covers daily demand records for a portfolio of products, along with supplementary information on calendar events, promotional campaigns, and stock levels. The main data was received in a Microsoft Excel file (\texttt{Datos.xlsx}) containing four sheets, each representing a distinct dimension of the business context. Two additional files were provided for the economic impact analysis: \texttt{DatosCicloAprovisionamiento.xlsx} (replenishment cycle and lead time per product) and \texttt{DatosPrecioMedio.xlsx} (average unit price per product).
 
 No personally identifiable information is present in the dataset, and all product references are anonymised using numerical identifiers, ensuring compliance with data privacy requirements as discussed in Section~\ref{s:etic}.
 
@@ -80,7 +80,7 @@ The high proportion of zero-sales observations (65.3\%) is a defining characteri
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/01_sales_distribution.png}
+\includegraphics[width=0.85\textwidth]{figures/01_sales_distribution.pdf}
 \caption{Distribution of daily unit sales (\texttt{udsVenta}). The histogram confirms the extreme right skew, with the majority of observations at zero.}
 \label{fig:sales_distribution}
 \end{figure}
@@ -93,7 +93,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/02_sales_by_day_of_week.png}
+\includegraphics[width=0.85\textwidth]{figures/02_sales_by_day_of_week.pdf}
 \caption{Average daily sales by day of the week. Demand is consistent Monday through Saturday, with a sharp drop on Sundays.}
 \label{fig:sales_by_dow}
 \end{figure}
@@ -102,7 +102,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/09_monthly_by_year.png}
+\includegraphics[width=0.85\textwidth]{figures/09_monthly_by_year.pdf}
 \caption{Average daily sales by month, broken down by year. Monthly variation is moderate, with no single dominant seasonal peak.}
 \label{fig:monthly_by_year}
 \end{figure}
@@ -111,16 +111,25 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/05_promo_vs_nonpromo.png}
+\includegraphics[width=0.85\textwidth]{figures/05_promo_vs_nonpromo.pdf}
 \caption{Comparison of sales distributions during promotional and non-promotional periods. Mean sales during promotions (1.36 units) are slightly higher than non-promotional periods (1.16 units).}
 \label{fig:promo_vs_nonpromo}
+\end{figure}
+
+\textbf{Correlation analysis.} A Pearson correlation matrix was computed across the main numerical variables to identify linear relationships in the data. The results show moderate positive correlation between stock levels and sales, weak correlations between calendar/promotional variables and sales, and the expected strong autocorrelation structure in the temporal features. This analysis informed the feature engineering strategy by confirming that no single raw variable is a strong linear predictor of demand, motivating the creation of derived features (lags, rolling statistics, EWMA) that capture temporal patterns more effectively.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/07_correlation_heatmap.pdf}
+\caption{Pearson correlation matrix between the main dataset variables. Sales (\texttt{udsVenta}) show weak linear correlations with most raw features, motivating the use of engineered temporal features.}
+\label{fig:correlation_heatmap}
 \end{figure}
 
 \textbf{Autocorrelation structure.} Autocorrelation analysis on a sample of products confirmed significant positive autocorrelation at lags 1, 7, 14, and 28, with the strongest signal at lag 7 (weekly periodicity). This finding directly supports the creation of lag features at these intervals and validates the choice of lag-7 as the naive baseline.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/08_autocorrelation_sample.png}
+\includegraphics[width=0.95\textwidth]{figures/08_autocorrelation_sample.pdf}
 \caption{Autocorrelation function (ACF) for a sample of products, showing significant positive autocorrelation at weekly intervals.}
 \label{fig:autocorrelation}
 \end{figure}
@@ -129,7 +138,7 @@ The exploratory analysis examined demand patterns across several dimensions:
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/10b_seasonal_decomposition.png}
+\includegraphics[width=0.95\textwidth]{figures/10b_seasonal_decomposition.pdf}
 \caption{Additive seasonal decomposition of aggregated daily sales (period = 7 days). The weekly seasonal component is clearly visible, with a stable trend and no systematic residual patterns.}
 \label{fig:seasonal_decomposition}
 \end{figure}
@@ -145,6 +154,8 @@ The data quality assessment identified the following issues:
 \textbf{Stock breaks.} A stock break is defined as a day where both sales and stock are zero, potentially indicating that demand existed but could not be fulfilled due to inventory unavailability. Approximately 2.0\% of observations met this criterion. These were treated during data cleaning by imputing the product's historical mean sales for the corresponding weekday.
 
 \textbf{Outliers.} Outlier detection was performed using a 3$\sigma$ threshold per product per month. This identified approximately 8,895 observations (1.41\% of the dataset) as outliers, which were capped at the upper threshold value. The per-product-per-month approach was preferred over a global threshold to account for the varying demand scales and seasonal patterns across products.
+
+\textbf{Sales on closed days.} A small number of sales (3,776 records across 69 days marked as closed in the calendar) were observed. The volumes are small and do not materially affect the analysis, but the origin of these transactions was not determined. No corrective action was taken, as the observations were retained in the dataset.
 
 
 \clearpage
@@ -215,7 +226,7 @@ All lag and rolling features were computed strictly using past data to prevent i
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/10_feature_correlations.png}
+\includegraphics[width=0.95\textwidth]{figures/10_feature_correlations.pdf}
 \caption{Pearson correlation of each engineered feature with the target variable (\texttt{udsVenta}). The 28-day EWMA and rolling mean features show the strongest positive correlation with sales.}
 \label{fig:feature_correlations}
 \end{figure}
@@ -237,7 +248,7 @@ Six forecasting approaches were implemented, spanning a naive baseline, a classi
 
     \item \textbf{XGBoost:} A gradient boosting framework that builds decision trees sequentially rather than in parallel \citep{chen2016xgboost}. The key idea is that each new tree is trained not on the original target variable, but on the residual errors of the previous trees. The first tree makes a rough prediction, the second tree learns to predict where the first tree went wrong, the third tree corrects the remaining errors, and so on. The final prediction is the weighted sum of all trees' contributions. This sequential error-correction approach allows gradient boosting to achieve high accuracy with relatively shallow trees (typically 4--8 levels deep), as each tree only needs to capture a small improvement. XGBoost incorporates L1 and L2 regularisation to prevent overfitting, column subsampling (using a random subset of features per tree, similar to Random Forest), and efficient handling of sparse data through a default direction for missing values at each split. This last property makes it well-suited to the high proportion of zero-demand observations in this dataset.
 
-    \item \textbf{LightGBM:} A gradient boosting implementation that follows the same sequential error-correction strategy as XGBoost but with key differences in how trees are constructed \citep{ke2017lightgbm}. While XGBoost grows trees level by level (expanding all nodes at the same depth before moving deeper), LightGBM grows trees leaf by leaf, always expanding the leaf with the largest potential error reduction. This leaf-wise strategy produces deeper, more asymmetric trees that can capture complex patterns with fewer total nodes. LightGBM also uses histogram-based binning, which groups continuous feature values into discrete bins before searching for the optimal split point. This reduces the computational cost from $O(n)$ to $O(k)$ per split (where $k$ is the number of bins, typically 255), enabling significantly faster training on large datasets. LightGBM was among the dominant algorithms in the M5 forecasting competition \citep{makridakis2021m5findings}, one of the largest demand forecasting benchmarks to date.
+    \item \textbf{LightGBM:} A gradient boosting implementation that follows the same sequential error-correction strategy as XGBoost but with key differences in how trees are constructed \citep{ke2017lightgbm}. While XGBoost grows trees level by level (expanding all nodes at the same depth before moving deeper), LightGBM grows trees leaf by leaf, always expanding the leaf with the largest potential error reduction. This leaf-wise strategy produces deeper, more asymmetric trees that can capture complex patterns with fewer total nodes. LightGBM also uses histogram-based binning, which groups continuous feature values into discrete bins before searching for the optimal split point. This reduces the computational cost from $O(n)$ to $O(k)$ per split (where $k$ is the number of bins, typically 255), enabling significantly faster training on large datasets.
 
     \item \textbf{LSTM (Long Short-Term Memory):} A recurrent neural network architecture designed to capture temporal dependencies in sequential data \citep{hochreiter1997lstm}. Unlike tree-based methods, which treat each observation as an independent row of features, LSTM processes input data as ordered sequences, maintaining an internal memory state that evolves as it reads through the time steps. The model receives 14 consecutive days of 33 features as input. At each time step, the LSTM cell updates its internal state through three learned gates: the \textit{forget gate} decides what information from previous days to discard (e.g., an old promotional effect that is no longer relevant), the \textit{input gate} decides what new information to store (e.g., a sudden demand spike), and the \textit{output gate} decides what to expose as the hidden state for the next step. This gating mechanism is what distinguishes LSTMs from simple recurrent networks, which suffer from vanishing gradients when trying to learn dependencies across many time steps. The model was implemented in PyTorch \citep{paszke2019pytorch} with a single LSTM layer of 32 hidden units. Only the output of the final time step (Day 14) is fed to a fully connected linear layer to produce the demand forecast for the next day. Training used the Adam optimiser (learning rate 0.003, batch size 512) with early stopping (patience of 10 epochs) on all 861 products. Training was monitored on a held-out validation set and stopped automatically when the validation loss ceased to improve, which occurred at epoch 15 out of a maximum of 100. All input features were scaled to the $[0, 1]$ range using min-max normalisation fitted on the training set, as neural networks are sensitive to feature magnitudes.
 \end{enumerate}
@@ -381,7 +392,7 @@ The relatively shallow tree depths (4--8) and moderate learning rates (0.030--0.
 
 \subsection{Accuracy Results Obtained}
 
-Table~\ref{tab:results_summary} presents the average performance of each model across the three validation folds:
+Table~\ref{tab:results_summary} presents the performance of each model on the last validation fold (Fold 3, covering 2026-02-21 to 2026-03-22). The three-fold strategy served two purposes: Fold 1 was used for hyperparameter tuning (Section~3.5.3), and the consistency across all three folds confirms that the results are robust and not an artefact of a particular time period. The last fold is reported as the primary result because it uses the largest training set (701 days) and best approximates a real deployment scenario. Performance improved steadily across folds as more training data became available (e.g., XGBoost RMSE: 1.870 in Fold 1, 1.720 in Fold 2, 1.634 in Fold 3).
 
 \begin{table}[H]
 \centering
@@ -402,16 +413,14 @@ Naive (lag-7) & 1.256 & 2.277 & 72.9 & 2.277 \\
 \end{tabular}
 \end{table}
 
-The three tree-based models and LSTM achieve virtually identical performance, with XGBoost holding a marginal edge on RMSE (1.634) and LSTM achieving the lowest MAE (1.089). All four models reduce RMSE by approximately 28\% compared to the naive baseline (2.277). ARIMA (1.734) also outperforms the baseline substantially, though with a gap behind the other ML models. The near-identical performance of the tree models and LSTM suggests that the feature engineering, rather than the specific algorithm, is the primary driver of forecast quality.
+The three tree-based models and LSTM achieve nearly identical performance, with XGBoost holding a marginal edge on RMSE (1.634) and LSTM achieving the lowest MAE (1.089). All four models reduce RMSE by approximately 28\% compared to the naive baseline (2.277). ARIMA (1.734) also outperforms the baseline substantially, though with a gap behind the other ML models. The near-identical performance of the tree models and LSTM suggests that the feature engineering, rather than the specific algorithm, is the primary driver of forecast quality.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.png}
-\caption{Comparison of forecast accuracy (RMSE) across all six models. The tree-based models and LSTM form a tight cluster with virtually identical performance, all substantially outperforming the naive baseline.}
+\includegraphics[width=0.85\textwidth]{figures/24_all_models_comparison.pdf}
+\caption{Comparison of forecast accuracy (RMSE) across all six models. The tree-based models and LSTM form a tight cluster with nearly identical performance, all substantially outperforming the naive baseline.}
 \label{fig:all_models_comparison}
 \end{figure}
-
-This ranking is consistent with the findings of the M5 forecasting competition \citep{makridakis2021m5findings}, where gradient boosting algorithms consistently outperformed both classical statistical methods and deep learning approaches.
 
 \subsection{Comparison of Results Across Models}
 
@@ -449,65 +458,37 @@ Promotional demand is consistently harder to predict across all models, though t
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/17_error_distributions.png}
+\includegraphics[width=0.95\textwidth]{figures/17_error_distributions.pdf}
 \caption{Distribution of forecast errors for all six models. The tree-based models produce tighter, more symmetric error distributions compared to the naive baseline, with ARIMA and LSTM falling in between.}
 \label{fig:error_distributions}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/18_per_product_rmse_dist.png}
+\includegraphics[width=0.95\textwidth]{figures/18_per_product_rmse_dist.pdf}
 \caption{Distribution of per-product RMSE values: Naive vs each ML model. All five models shift the distribution towards lower RMSE values, with the three tree-based models showing the largest improvement.}
 \label{fig:per_product_rmse}
 \end{figure}
 
-\textbf{SHAP feature importance.} To understand the drivers of model predictions, SHAP (SHapley Additive exPlanations) analysis \citep{lundberg2017shap} was performed on the LightGBM model. Table~\ref{tab:shap_top10} presents the ten most influential features:
+\textbf{Cross-model SHAP feature importance.} To understand the drivers of model predictions and assess whether different model architectures rely on the same features, SHAP (SHapley Additive exPlanations) analysis \citep{lundberg2017shap} was performed on all four top-performing models. For the three tree-based models (Random Forest, XGBoost, LightGBM), exact SHAP values were computed using TreeExplainer on a sample of 3,000 test observations. For the LSTM, approximate SHAP values were computed using GradientExplainer with 200 background samples; since the LSTM receives sequences of 14 timesteps, the resulting SHAP values (per timestep per feature) were aggregated by summing absolute contributions over the 14 timesteps to produce a single importance value per feature, comparable with the tree-based models.
 
-\begin{table}[H]
-\centering
-\small
-\caption{Top 10 features by mean absolute SHAP value (LightGBM).}
-\label{tab:shap_top10}
-\begin{tabular}{|r|l|r|}
-\hline
-\textbf{Rank} & \textbf{Feature} & \textbf{Mean $|$SHAP$|$} \\
-\hline
-1 & ewma\_28 & 0.473 \\
-2 & day\_of\_week & 0.260 \\
-3 & roll\_mean\_28 & 0.108 \\
-4 & udsStock & 0.037 \\
-5 & lag\_7 & 0.024 \\
-6 & lag\_28 & 0.022 \\
-7 & lag\_14 & 0.018 \\
-8 & roll\_max\_28 & 0.018 \\
-9 & bolOpen & 0.018 \\
-10 & bolHoliday & 0.004 \\
-\hline
-\end{tabular}
-\end{table}
-
-The 28-day EWMA emerges as the single most important predictor, followed by the day of week and the 28-day rolling mean. This confirms that the model relies heavily on smoothed representations of recent demand history, with calendar effects providing secondary but significant predictive power. Notably, the longer-horizon features (28-day windows) dominate over shorter-horizon ones (7-day), suggesting that the model captures medium-term demand trends rather than relying solely on short-term momentum.
+Figure~\ref{fig:shap_cross_model} presents the top 10 features by mean absolute SHAP value for each model. The 28-day EWMA (\texttt{ewma\_28}) emerges as the most important predictor across all four models, confirming that smoothed recent demand history is the strongest signal regardless of model architecture. The day of week and 28-day rolling mean consistently appear in the top three for all models.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/15_shap_bar.png}
-\caption{SHAP feature importance (mean absolute SHAP values) for LightGBM. The 28-day EWMA dominates, followed by calendar and rolling statistics features.}
-\label{fig:shap_bar}
+\includegraphics[width=0.95\textwidth]{figures/16b_shap_cross_model_comparison.pdf}
+\caption{Cross-model SHAP feature importance (mean absolute SHAP values) for the four top-performing models. The 28-day EWMA dominates across all architectures. The LSTM shows higher reliance on calendar features (\texttt{is\_weekend}, \texttt{month}, \texttt{year}) due to its sequential processing of 14-day input windows.}
+\label{fig:shap_cross_model}
 \end{figure}
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/14_shap_summary.png}
-\caption{SHAP summary plot showing the direction and magnitude of feature effects. Red indicates high feature values; blue indicates low values. High \texttt{ewma\_28} values push predictions upward, consistent with higher recent demand leading to higher forecasts.}
-\label{fig:shap_summary}
-\end{figure}
+To quantify the agreement between models, Spearman rank correlations were computed over the full set of 33 features. The three tree-based models show strong agreement ($\rho = 0.86$--$0.93$), confirming that they extract similar information from the feature set despite using different learning strategies (bagging vs gradient boosting). The LSTM shows moderate correlation with the tree models ($\rho = 0.40$--$0.53$), reflecting its different approach to feature utilisation: the LSTM relies more heavily on calendar features (\texttt{is\_weekend}, \texttt{month}, \texttt{week\_of\_year}) because its sequential architecture processes these signals across multiple timesteps, amplifying their cumulative contribution. In contrast, the tree models handle weekly patterns more efficiently through direct splits on \texttt{day\_of\_week}.
 
 \subsection{Conclusions from Results}
 
 The evaluation yields several key findings:
 
 \begin{enumerate}
-    \item The three tree-based models and LSTM achieve virtually identical performance, with RMSE values within 1\% of each other (1.634--1.643). This suggests that the feature engineering, rather than the specific algorithm choice, is the primary driver of forecast quality. The LSTM, trained on all 861 products with early stopping, matches the tree models despite using a fundamentally different learning approach.
+    \item The three tree-based models and LSTM achieve nearly identical performance, with RMSE values within 1\% of each other (1.634--1.643). This suggests that the feature engineering, rather than the specific algorithm choice, is the primary driver of forecast quality. The LSTM, trained on all 861 products with early stopping, matches the tree models despite using a fundamentally different learning approach.
 
     \item ARIMA occupies a separate tier. ARIMA (RMSE = 1.734) achieves a 23.9\% improvement over the naive baseline when fitted to all 861 products, demonstrating that classical time series methods remain effective. However, its per-product fitting approach cannot leverage cross-product patterns, which explains the gap with the global models.
 
@@ -515,7 +496,7 @@ The evaluation yields several key findings:
 
     \item Promotional demand remains challenging, though the ML models maintain their relative advantage over the baseline in both promotional and non-promotional segments.
 
-    \item SHAP analysis reveals that smoothed demand history (EWMA and rolling statistics) and calendar features are the most influential predictors, validating the feature engineering strategy adopted in this work.
+    \item SHAP analysis across all four top models reveals that smoothed demand history (EWMA and rolling statistics) and calendar features are the most influential predictors regardless of model architecture. The three tree-based models show strong agreement in feature rankings (Spearman $\rho > 0.86$), while the LSTM relies more on calendar features due to its sequential processing, though the core signal (\texttt{ewma\_28}) is shared. This validates the feature engineering strategy adopted in this work.
 
     \item The forecast error standard deviation ($\sigma_e \approx 1.64$ for the top four models, $\sigma_e \approx 2.28$ for the naive baseline) provides the direct input to the safety stock calculation presented in the following section.
 \end{enumerate}
@@ -557,14 +538,14 @@ The ML models consistently require approximately 27\% less safety stock than the
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/21_safety_stock_by_service_level.png}
+\includegraphics[width=0.85\textwidth]{figures/21_safety_stock_by_service_level.pdf}
 \caption{Total safety stock requirements by model and service level. The tree-based models maintain a consistent 27\% advantage over the naive baseline across all service levels tested (90\%, 95\%, 99\%).}
 \label{fig:safety_stock_service_level}
 \end{figure}
 
 \subsection{Economic Impact}
 
-The economic impact analysis translates the forecast accuracy improvements into monetary terms using the methodology described in the \texttt{EstimacionCostesStock} document provided by the thesis supervisor, combined with real per-product cost parameters from the company.
+The economic impact analysis translates the forecast accuracy improvements into monetary terms using the methodology described in the \texttt{EstimacionCostesStock} document provided by the thesis tutor, combined with real per-product cost parameters from the company.
 
 \textbf{Cost parameters.} Two additional datasets were used for this analysis:
 \begin{itemize}
@@ -580,7 +561,7 @@ The protection period for each product was computed as the sum of its replenishm
 \text{DailyCost}_i = 5\% \times \text{price}_i \times SS_i
 \]
 
-\noindent where $SS_i = z \times RMSE_i \times \sqrt{T_i + L_i}$ and the 5\% rate represents the combined cost of warehousing, insurance, and capital opportunity cost, as specified in the supervisor's methodology document.
+\noindent where $SS_i = z \times RMSE_i \times \sqrt{T_i + L_i}$ and the 5\% rate represents the combined cost of warehousing, insurance, and capital opportunity cost, as specified in the tutor's methodology document.
 
 Table~\ref{tab:economic_summary} presents the total annual safety stock cost for each model:
 
@@ -607,7 +588,7 @@ All five ML models achieve substantial savings compared to the naive baseline. T
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/20_annual_cost_comparison.png}
+\includegraphics[width=0.85\textwidth]{figures/20_annual_cost_comparison.pdf}
 \caption{Annual safety stock cost by model. All five ML models reduce total annual costs compared to the naive baseline, with the three tree-based models achieving approximately 27\% savings.}
 \label{fig:annual_cost_comparison}
 \end{figure}
@@ -616,18 +597,18 @@ Figure~\ref{fig:per_product_cost_comparison} provides a per-product view of the 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/25_per_product_cost_comparison.png}
+\includegraphics[width=0.95\textwidth]{figures/25_per_product_cost_comparison.pdf}
 \caption{Per-product annual safety stock cost for the top 200 products (ranked by naive cost). Grey area: naive baseline. Coloured area: ML model. The gap represents cost savings.}
 \label{fig:per_product_cost_comparison}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.95\textwidth]{figures/22_safety_stock_distribution.png}
+\includegraphics[width=0.95\textwidth]{figures/22_safety_stock_distribution.pdf}
 \caption{Per-product safety stock distribution: Naive vs each ML model. All five ML models shift the distribution towards lower safety stock requirements across the product portfolio.}
 \label{fig:safety_stock_distribution}
 \end{figure}
 
 These results demonstrate that the forecast accuracy improvements documented in Section~3.6 translate into substantial economic benefits when applied with real company data. The tree-based models and LSTM achieve approximately 26--27\% cost savings, while ARIMA delivers a 22.5\% reduction, confirming the theoretical relationship between forecast error and inventory costs established in Chapter~2 (Equations~\ref{eq:ss_cost} and \ref{eq:cost_savings}).
 
-It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis supervisor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained for all five models regardless of the risk tolerance adopted by the organisation.
+It is important to note that the cost parameters used in this analysis (5\% daily holding cost rate, per-product prices and replenishment cycles) were provided by the thesis tutor and reflect the company's actual operational context. The relative ranking of models and the percentage savings are robust to reasonable variations in the holding cost rate, as the underlying driver is the reduction in forecast error rather than the specific cost assumptions. A sensitivity analysis across service levels (Table~\ref{tab:sensitivity}) confirms that the ML advantage is maintained for all five models regardless of the risk tolerance adopted by the organisation.

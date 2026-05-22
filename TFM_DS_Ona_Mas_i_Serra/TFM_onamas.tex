@@ -326,7 +326,7 @@ project timeline, as shown in Figure \ref{fig:gantt}.
 \begin{ganttchart}[
     hgrid,
     vgrid,
-    x unit=0.55cm,
+    x unit=0.5cm,
     y unit title=0.7cm,
     y unit chart=0.7cm,
     title/.style={fill=blue!30},
@@ -335,21 +335,20 @@ project timeline, as shown in Figure \ref{fig:gantt}.
     bar label font=\footnotesize,
     group/.style={fill=blue!70},
     group label font=\footnotesize\bfseries,
-    milestone/.style={fill=red!70},
+    milestone/.style={fill=darkblueUOC},
+    milestone label font=\footnotesize,
     bar label node/.append style={align=left},
     group label node/.append style={align=left}
-]{1}{19}
+]{1}{18}
 
-\gantttitle{TFM Schedule (Feb 19 -- Jun 26, 2026)}{19} \\
-\gantttitle{Feb}{1}
+\gantttitle{TFM Schedule (Feb 19 -- Jun 26, 2026)}{18} \\
+\gantttitle{Feb}{2}
 \gantttitle{Mar}{4}
 \gantttitle{Apr}{4}
-\gantttitle{May}{5}
-\gantttitle{Jun}{4}
-\gantttitle{}{1} \\
+\gantttitle{May}{4}
+\gantttitle{Jun}{4} \\
 
 \ganttgroup{M1: Definition \& Planning}{1}{2} \\
-
 \ganttmilestone{M1 Submission (Mar 1)}{2} \\
 
 \ganttgroup{M2: State of the Art}{3}{5} \\
@@ -368,10 +367,10 @@ project timeline, as shown in Figure \ref{fig:gantt}.
 \ganttbar{Audiovisual presentation (Jun 2)}{14}{15} \\
 \ganttmilestone{M4 Submission (Jun 2)}{15} \\
 
-\ganttgroup{M5: Defence}{16}{19} \\
+\ganttgroup{M5: Defence}{16}{18} \\
 \ganttbar{Documentation to tribunal (Jun 5)}{16}{16} \\
 \ganttbar{Preparation}{16}{18} \\
-\ganttmilestone{Public defence (Jun 26)}{19} \\
+\ganttmilestone{Public defence (Jun 26)}{18} \\
 
 \end{ganttchart}
 \caption{TFM project schedule based on UOC academic calendar.}
